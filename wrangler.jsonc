@@ -1,0 +1,49 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "webdesa-cloudflare-staging",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-11-06",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "webdesa",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "UPLOADS",
+      "bucket_name": "webdesa-uploads"
+    }
+  ],
+  "vars": {
+    "APP_ENV": "production",
+    "BETTER_AUTH_URL": "https://your-project.pages.dev"
+  },
+  "env": {
+    "preview": {
+      "vars": {
+        "APP_ENV": "staging",
+        "BETTER_AUTH_URL": "https://migration-cloudflare.webdesa-cloudflare-staging.pages.dev"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "webdesa-cloudflare-staging",
+          "database_id": "342f5660-bcd0-4727-9709-c3d37cbb85b3",
+          "migrations_dir": "drizzle"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "UPLOADS",
+          "bucket_name": "webdesa-cloudflare-staging-uploads"
+        }
+      ]
+    }
+  }
+}

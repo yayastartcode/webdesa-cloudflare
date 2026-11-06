@@ -1,0 +1,7 @@
+APP_ENV=development
+BETTER_AUTH_URL=http://localhost:8788
+BETTER_AUTH_SECRET=replace-with-at-least-32-random-characters
+# Required only for first administrator creation; remove after setup.
+SETUP_TOKEN=replace-with-a-random-one-time-setup-token
+# Set this and VITE_RECAPTCHA_SITE_KEY for non-development environments.
+RECAPTCHA_SECRET_KEY=

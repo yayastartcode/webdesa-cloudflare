@@ -1,0 +1,145 @@
+@import "tailwindcss";
+@source "./";
+@source "../components";
+
+/* Base styles with traditional colors */
+* {
+  border-color: rgb(229 231 235); /* gray-200 */
+  outline-color: rgb(59 130 246 / 0.5); /* blue-500/50 */
+}
+
+@media (prefers-color-scheme: dark) {
+  * {
+    border-color: rgb(55 65 81); /* gray-700 */
+    outline-color: rgb(59 130 246 / 0.5); /* blue-500/50 */
+  }
+}
+
+body {
+  background-color: white;
+  color: black;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: rgb(17 24 39); /* gray-900 */
+    color: white;
+  }
+}
+
+/* Custom utilities */
+@utility animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+@utility animation-delay-200 {
+  animation-delay: 0.2s;
+  opacity: 0;
+}
+
+@utility animation-delay-400 {
+  animation-delay: 0.4s;
+  opacity: 0;
+}
+
+@utility animation-delay-600 {
+  animation-delay: 0.6s;
+  opacity: 0;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Fix UploadThing button contrast issues */
+.ut-button,
+label[data-ut-element="button"],
+button[data-ut-element="button"] {
+  background-color: rgb(234 88 12) !important;
+  color: white !important;
+  border-color: rgb(234 88 12) !important;
+}
+
+.ut-button:hover,
+label[data-ut-element="button"]:hover,
+button[data-ut-element="button"]:hover {
+  background-color: rgb(194 65 12) !important;
+  color: white !important;
+}
+
+.ut-button:focus,
+label[data-ut-element="button"]:focus,
+button[data-ut-element="button"]:focus {
+  outline: 2px solid rgb(249 115 22) !important;
+  outline-offset: 2px !important;
+}
+
+.ut-button[data-state="ready"],
+label[data-ut-element="button"][data-state="ready"],
+button[data-ut-element="button"][data-state="ready"] {
+  background-color: rgb(234 88 12) !important;
+  color: white !important;
+}
+
+.ut-button[data-state="uploading"],
+label[data-ut-element="button"][data-state="uploading"],
+button[data-ut-element="button"][data-state="uploading"] {
+  background-color: rgb(194 65 12) !important;
+  color: white !important;
+}
+
+.ut-button[data-state="readying"],
+label[data-ut-element="button"][data-state="readying"],
+button[data-ut-element="button"][data-state="readying"] {
+  background-color: rgb(194 65 12) !important;
+  color: white !important;
+}
+
+/* Fix text inside button */
+.ut-button *,
+label[data-ut-element="button"] *,
+button[data-ut-element="button"] * {
+  color: white !important;
+}
+
+.ut-allowed-content,
+div[data-ut-element="allowed-content"] {
+  color: rgb(75 85 99) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .ut-allowed-content,
+  div[data-ut-element="allowed-content"] {
+    color: rgb(209 213 219) !important;
+  }
+}
+
+.ut-label,
+label[data-ut-element="label"] {
+  color: rgb(17 24 39) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  .ut-label,
+  label[data-ut-element="label"] {
+    color: white !important;
+  }
+}
+
+/* Fix any other potential contrast issues */
+.ut-upload-icon,
+svg[data-ut-element="upload-icon"] {
+  color: rgb(234 88 12) !important;
+}
+
+/* Ensure proper contrast for form elements */
+input[type="checkbox"] {
+  accent-color: rgb(234 88 12);
+}

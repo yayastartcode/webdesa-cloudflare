@@ -1,0 +1,58 @@
+import { lazy, Suspense } from 'react';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useSession } from './lib/auth-client';
+import '@fontsource/geist/latin.css';
+import '@fontsource/geist-mono/latin.css';
+import './app/globals.css';
+const Page0 = lazy(() => import('./app/berita/[id]/page'));
+const Page1 = lazy(() => import('./app/berita/page'));
+const Page2 = lazy(() => import('./app/dashboard/apb-desa/page'));
+const Page3 = lazy(() => import('./app/dashboard/employees/page'));
+const Page4 = lazy(() => import('./app/dashboard/gallery/page'));
+const Page5 = lazy(() => import('./app/dashboard/header-settings/page'));
+const Page6 = lazy(() => import('./app/dashboard/helpdesk/page'));
+const Page7 = lazy(() => import('./app/dashboard/hero-slides/page'));
+const Page8 = lazy(() => import('./app/dashboard/info/page'));
+const Page9 = lazy(() => import('./app/dashboard/page'));
+const Page10 = lazy(() => import('./app/dashboard/population-data/page'));
+const Page11 = lazy(() => import('./app/dashboard/posts/page'));
+const Page12 = lazy(() => import('./app/dashboard/village-head-welcome/page'));
+const Page13 = lazy(() => import('./app/dashboard/village-info/page'));
+const Page14 = lazy(() => import('./app/galeri/page'));
+const Page15 = lazy(() => import('./app/info/[slug]/page'));
+const Page16 = lazy(() => import('./app/login/page'));
+const Page17 = lazy(() => import('./app/page'));
+const Page18 = lazy(() => import('./app/setup/page'));
+
+function Admin({ children }: { children: React.ReactNode }) {
+  const { data, status } = useSession();
+  if (status === 'loading') return <p className="p-8">Memuat dashboard...</p>;
+  if (!data) return <Navigate to="/login" replace />;
+  if (data.user.role !== 'ADMIN') return <Navigate to="/" replace />;
+  return children;
+}
+createRoot(document.getElementById('root')!).render(
+  <BrowserRouter><Suspense fallback={<p className="p-8">Memuat...</p>}><Routes>
+    <Route path="/berita/:id" element={<Page0 />} />
+    <Route path="/berita" element={<Page1 />} />
+    <Route path="/dashboard/apb-desa" element={<Admin><Page2 /></Admin>} />
+    <Route path="/dashboard/employees" element={<Admin><Page3 /></Admin>} />
+    <Route path="/dashboard/gallery" element={<Admin><Page4 /></Admin>} />
+    <Route path="/dashboard/header-settings" element={<Admin><Page5 /></Admin>} />
+    <Route path="/dashboard/helpdesk" element={<Admin><Page6 /></Admin>} />
+    <Route path="/dashboard/hero-slides" element={<Admin><Page7 /></Admin>} />
+    <Route path="/dashboard/info" element={<Admin><Page8 /></Admin>} />
+    <Route path="/dashboard" element={<Admin><Page9 /></Admin>} />
+    <Route path="/dashboard/population-data" element={<Admin><Page10 /></Admin>} />
+    <Route path="/dashboard/posts" element={<Admin><Page11 /></Admin>} />
+    <Route path="/dashboard/village-head-welcome" element={<Admin><Page12 /></Admin>} />
+    <Route path="/dashboard/village-info" element={<Admin><Page13 /></Admin>} />
+    <Route path="/galeri" element={<Page14 />} />
+    <Route path="/info/:slug" element={<Page15 />} />
+    <Route path="/login" element={<Page16 />} />
+    <Route path="/" element={<Page17 />} />
+    <Route path="/setup" element={<Page18 />} />
+    <Route path="*" element={<main className="p-8"><h1>Halaman tidak ditemukan</h1><a href="/">Kembali ke beranda</a></main>} />
+  </Routes></Suspense></BrowserRouter>
+);
