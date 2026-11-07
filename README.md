@@ -2,6 +2,10 @@
 
 Aplikasi Desa Lomaer menggunakan React + Vite pada Cloudflare Pages, Pages Functions untuk API, D1 + Drizzle, R2 untuk gambar/PDF, dan Better Auth untuk sesi administrator. Seluruh halaman dan komponen UI lama tetap digunakan.
 
+## Panduan pengguna
+
+[Unduh panduan PDF untuk admin/operator (35 halaman)](docs/panduan/Panduan-Penggunaan-Website-Desa-Lomaer.pdf). Panduan berbahasa Indonesia memakai alamat `desalomaer.com` dan screenshot dengan data contoh. [Lihat sumber teks dan keterangan versi](docs/panduan/README.md).
+
 ## Staging
 
 Repository ini berdiri terpisah dari `yayastartcode/webdesa`. Branch aktif adalah `migration/cloudflare`.
