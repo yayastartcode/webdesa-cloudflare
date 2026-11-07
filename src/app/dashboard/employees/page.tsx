@@ -1,4 +1,6 @@
 "use client";
+import { ImageUploadField } from '@/components/ui/image-upload-field';
+import { usePendingUploads } from '@/lib/upload';
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -20,6 +22,7 @@ interface Employee {
 }
 
 export default function EmployeesPage() {
+  const { isUploading, onUploadStateChange } = usePendingUploads();
   const { toast } = useToast();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,6 +56,7 @@ export default function EmployeesPage() {
   };
 
   const handleAdd = async () => {
+    if (isUploading) return;
     if (!newForm.name.trim() || !newForm.position.trim()) {
       toast({
         title: "Error",
@@ -98,6 +102,7 @@ export default function EmployeesPage() {
   };
 
   const handleUpdate = async () => {
+    if (isUploading) return;
     if (!editForm.name?.trim() || !editForm.position?.trim()) {
       toast({
         title: "Error",
@@ -236,15 +241,9 @@ export default function EmployeesPage() {
                     placeholder="Masukkan jabatan"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="new-photo">URL Foto</Label>
-                  <Input
-                    id="new-photo"
-                    value={newForm.photoUrl}
-                    onChange={(e) => setNewForm({ ...newForm, photoUrl: e.target.value })}
-                    placeholder="https://example.com/photo.jpg"
-                  />
-                </div>
+                <ImageUploadField label="Foto pegawai" value={newForm.photoUrl}
+                    onChange={url => setNewForm(current => ({ ...current, photoUrl: url }))}
+                    onUploadStateChange={onUploadStateChange} />
                 <div>
                   <Label htmlFor="new-order">Urutan</Label>
                   <Input
@@ -257,7 +256,7 @@ export default function EmployeesPage() {
                 </div>
               </div>
               <div className="flex items-center space-x-2 mt-4">
-                <Button onClick={handleAdd} className="flex items-center space-x-2">
+                <Button disabled={isUploading} onClick={handleAdd} className="flex items-center space-x-2">
                   <Save className="h-4 w-4" />
                   <span>Simpan</span>
                 </Button>
@@ -315,14 +314,9 @@ export default function EmployeesPage() {
                           onChange={(e) => setEditForm({ ...editForm, position: e.target.value })}
                         />
                       </div>
-                      <div>
-                        <Label htmlFor={`edit-photo-${employee.id}`}>URL Foto</Label>
-                        <Input
-                          id={`edit-photo-${employee.id}`}
-                          value={editForm.photoUrl || ""}
-                          onChange={(e) => setEditForm({ ...editForm, photoUrl: e.target.value })}
-                        />
-                      </div>
+                      <ImageUploadField label="Foto pegawai" value={editForm.photoUrl}
+                    onChange={url => setEditForm(current => ({ ...current, photoUrl: url }))}
+                    onUploadStateChange={onUploadStateChange} />
                       <div>
                         <Label htmlFor={`edit-order-${employee.id}`}>Urutan</Label>
                         <Input
@@ -336,7 +330,7 @@ export default function EmployeesPage() {
                       <div className="flex items-center space-x-2">
                         <Button
                           size="sm"
-                          onClick={handleUpdate}
+                          disabled={isUploading} onClick={handleUpdate}
                           className="flex items-center space-x-1"
                         >
                           <Save className="h-3 w-3" />
@@ -371,6 +365,7 @@ export default function EmployeesPage() {
                         <Button
                           size="sm"
                           variant="outline"
+                          aria-label={`Edit ${employee.name}`}
                           onClick={() => handleEdit(employee)}
                           className="flex items-center space-x-1"
                         >

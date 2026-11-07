@@ -1,4 +1,6 @@
 "use client";
+import { ImageUploadField } from '@/components/ui/image-upload-field';
+import { usePendingUploads } from '@/lib/upload';
 
 import { useState, useEffect } from "react";
 import { useSession } from "@/lib/auth-client";
@@ -10,7 +12,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Trash2, Plus, GripVertical } from "lucide-react";
-import { UploadButton } from "@/lib/upload";
 
 interface NavigationItem {
   id?: string;
@@ -27,6 +28,7 @@ interface HeaderSettings {
 }
 
 export default function HeaderSettingsPage() {
+  const { isUploading, onUploadStateChange } = usePendingUploads();
   const { data: session, status } = useSession() as { data: Session | null; status: string; };
   const router = useRouter();
   const [headerSettings, setHeaderSettings] = useState<HeaderSettings | null>(null);
@@ -73,6 +75,7 @@ export default function HeaderSettingsPage() {
   };
 
   const handleSave = async () => {
+    if (isUploading) return;
     setIsLoading(true);
     setError("");
     setMessage("");
@@ -175,46 +178,8 @@ export default function HeaderSettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="logoUrl" className="text-black dark:text-white">URL Logo</Label>
-                <Input
-                  id="logoUrl"
-                  type="url"
-                  placeholder="https://example.com/logo.png"
-                  value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
-                  className="text-gray-900 dark:text-white"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="text-black dark:text-white">Upload Logo Baru</Label>
-                <UploadButton
-                  endpoint="imageUploader"
-                  onClientUploadComplete={(res) => {
-                    if (res && res[0]) {
-                      setLogoUrl(res[0].ufsUrl);
-                      setMessage("Logo berhasil diupload!");
-                    }
-                  }}
-                  onUploadError={(error: Error) => {
-                    setError(`Upload error: ${error.message}`);
-                  }}
-                />
-              </div>
-
-              {logoUrl && (
-                <div className="space-y-2">
-                  <Label className="text-black dark:text-white">Preview Logo</Label>
-                  <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-800">
-                    <img
-                      src={logoUrl}
-                      alt="Logo Preview"
-                      className="h-12 w-auto object-contain"
-                    />
-                  </div>
-                </div>
-              )}
+              <ImageUploadField label="Logo website" value={logoUrl} onChange={setLogoUrl}
+                onUploadStateChange={onUploadStateChange} />
             </CardContent>
           </Card>
 
@@ -307,7 +272,7 @@ export default function HeaderSettingsPage() {
 
           {/* Save Button */}
           <div className="flex justify-end">
-            <Button onClick={handleSave} disabled={isLoading} size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
+            <Button onClick={handleSave} disabled={isLoading || isUploading} size="lg" className="bg-blue-600 hover:bg-blue-700 text-white">
               {isLoading ? "Menyimpan..." : "Simpan Pengaturan"}
             </Button>
           </div>

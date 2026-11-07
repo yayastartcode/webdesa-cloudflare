@@ -32,6 +32,10 @@ Untuk HMR, jalankan `npm run preview` pada terminal pertama dan `npm run dev` pa
 
 `APP_ENV=development` hanya untuk simulasi lokal. Konfigurasi repository secara default memakai `production`: cookie aman dan validasi CAPTCHA tidak dilewati di luar mode development.
 
+## Upload gambar dan foto
+
+Form berita, foto pegawai, logo, galeri, hero slide (baru dan lama), serta gambar di dalam editor berita/sambutan menyediakan upload langsung dengan pratinjau. Format JPG, PNG, WebP, dan GIF maksimal 4 MB. File baru disimpan di R2 dan konten memakai URL file, bukan data base64. Form tidak dapat disimpan selama upload berlangsung. URL gambar lama tetap dapat digunakan melalui pilihan “Gunakan URL gambar”.
+
 ## Validasi
 
 ```sh

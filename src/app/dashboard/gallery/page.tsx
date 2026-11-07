@@ -1,4 +1,6 @@
 "use client";
+import { ImageUploadField } from '@/components/ui/image-upload-field';
+import { usePendingUploads } from '@/lib/upload';
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -7,7 +9,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { UploadButton } from "@/lib/upload";
 import { Trash2, Edit, Eye, Plus } from "lucide-react";
 import Image from "@/components/image";
 
@@ -32,6 +33,7 @@ interface FormData {
 }
 
 export default function GalleryManagement() {
+  const { isUploading, onUploadStateChange } = usePendingUploads();
   const [galleries, setGalleries] = useState<GalleryItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +69,7 @@ export default function GalleryManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isUploading) return;
     if (!formData.title || !formData.imageUrl) {
       alert("Title dan gambar wajib diisi!");
       return;
@@ -182,7 +185,7 @@ export default function GalleryManagement() {
               Tambah Item
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingItem ? "Edit Item Galeri" : "Tambah Item Galeri"}
@@ -231,34 +234,12 @@ export default function GalleryManagement() {
                 />
               </div>
               
-              <div>
-                <label className="block text-sm font-medium mb-2">Gambar *</label>
-                {formData.imageUrl && (
-                  <div className="mb-4">
-                    <Image
-                      src={formData.imageUrl}
-                      alt="Preview"
-                      width={200}
-                      height={150}
-                      className="rounded-lg object-cover"
-                    />
-                  </div>
-                )}
-                <UploadButton
-                  endpoint="imageUploader"
-                  onClientUploadComplete={(res) => {
-                    if (res?.[0]) {
-                      setFormData({ ...formData, imageUrl: res[0].url });
-                    }
-                  }}
-                  onUploadError={(error: Error) => {
-                    alert(`Upload error: ${error.message}`);
-                  }}
-                />
-              </div>
-              
+              <ImageUploadField label="Gambar galeri" required value={formData.imageUrl}
+                onChange={url => setFormData(current => ({ ...current, imageUrl: url }))}
+                onUploadStateChange={onUploadStateChange} />
+
               <div className="flex gap-2 pt-4">
-                <Button type="submit" disabled={submitting}>
+                <Button type="submit" disabled={submitting || isUploading}>
                   {submitting ? "Menyimpan..." : editingItem ? "Perbarui" : "Simpan"}
                 </Button>
                 <Button 
@@ -317,7 +298,8 @@ export default function GalleryManagement() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleEdit(item)}
+                        aria-label={`Edit ${item.title}`}
+                          onClick={() => handleEdit(item)}
                       >
                         <Edit className="w-4 h-4" />
                       </Button>

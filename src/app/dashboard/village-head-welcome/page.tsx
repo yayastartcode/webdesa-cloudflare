@@ -1,4 +1,5 @@
 "use client";
+import { UploadButton, usePendingUploads } from '@/lib/upload';
 
 import { useState, useEffect } from "react";
 import { lazy } from "react";
@@ -22,6 +23,8 @@ interface VillageHeadWelcome {
 }
 
 export default function VillageHeadWelcomePage() {
+  const { isUploading, onUploadStateChange } = usePendingUploads();
+  const [lastImage, setLastImage] = useState('');
   const { toast } = useToast();
   const [welcome, setWelcome] = useState<VillageHeadWelcome>({ content: "" });
   const [content, setContent] = useState("");
@@ -55,6 +58,7 @@ export default function VillageHeadWelcomePage() {
   };
 
   const handleSave = async () => {
+    if (isUploading) return;
     if (!content.trim()) {
       toast({
         title: "Error",
@@ -136,7 +140,7 @@ export default function VillageHeadWelcomePage() {
             </Button>
             <Button
               onClick={handleSave}
-              disabled={isSaving}
+              disabled={isSaving || isUploading}
               className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700"
             >
               <Save className="h-4 w-4" />
@@ -156,6 +160,18 @@ export default function VillageHeadWelcomePage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              <div className="space-y-2 rounded-lg border p-3">
+                <p className="text-sm font-medium">Gambar dalam sambutan</p>
+                <UploadButton endpoint="imageUploader" inputLabel="Upload gambar dalam sambutan" onUploadStateChange={onUploadStateChange}
+                  onClientUploadComplete={files => {
+                    if (files[0]) {
+                      setLastImage(files[0].url);
+                      setContent(current => `${current}\n\n![Gambar sambutan](${files[0].url})\n`);
+                    }
+                  }} />
+                <p className="text-xs text-gray-500">Gambar yang diunggah akan ditambahkan ke akhir teks sambutan.</p>
+                {lastImage && <img src={lastImage} alt="Pratinjau gambar sambutan" className="max-h-32 max-w-full rounded object-contain" />}
+              </div>
               {showPreview ? (
                 <MDEditor
                   value={content}

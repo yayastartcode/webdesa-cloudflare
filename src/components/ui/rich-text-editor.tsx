@@ -5,21 +5,27 @@ import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import { Button } from '@/components/ui/button'
-import { Bold, Italic, List, Image as ImageIcon } from 'lucide-react'
+import { uploadFile } from '@/lib/upload'
+import { Bold, Italic, List, Loader2, Image as ImageIcon } from 'lucide-react'
 
 interface RichTextEditorProps {
   value?: string
   onChange?: (value: string) => void
   placeholder?: string
   className?: string
+  onUploadStateChange?: (pending: boolean) => void
 }
 
 export function RichTextEditor({
   value = '',
   onChange,
   placeholder = 'Start typing...',
-  className = ''
+  className = '',
+  onUploadStateChange,
 }: RichTextEditorProps) {
+  const imageInput = React.useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = React.useState(false)
+  const [uploadError, setUploadError] = React.useState('')
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -48,22 +54,23 @@ export function RichTextEditor({
     }
   }, [editor, value])
 
-  const handleImageUpload = () => {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'image/*'
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0]
-      if (file) {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const src = e.target?.result as string
-          editor?.chain().focus().setImage({ src }).run()
-        }
-        reader.readAsDataURL(file)
-      }
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const input = event.currentTarget
+    const file = input.files?.[0]
+    if (!file || !editor) return
+    setUploading(true)
+    setUploadError('')
+    onUploadStateChange?.(true)
+    try {
+      const image = await uploadFile(file)
+      if (!editor.isDestroyed) editor.chain().focus().setImage({ src: image.url, alt: file.name }).run()
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Upload gambar gagal')
+    } finally {
+      setUploading(false)
+      onUploadStateChange?.(false)
+      input.value = ''
     }
-    input.click()
   }
 
   if (!editor) {
@@ -110,13 +117,20 @@ export function RichTextEditor({
           type="button"
           variant="ghost"
           size="sm"
-          onClick={handleImageUpload}
+          aria-label="Tambah gambar dalam konten"
+          title="Tambah gambar dalam konten"
+          disabled={uploading}
+          onClick={() => imageInput.current?.click()}
           className="h-8 w-8 p-0"
         >
-          <ImageIcon className="h-4 w-4" />
+          {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
         </Button>
       </div>
       
+      <input ref={imageInput} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only"
+        aria-label="Upload gambar dalam konten" disabled={uploading} onChange={handleImageUpload} />
+      {uploading && <p role="status" className="px-4 py-2 text-sm">Mengunggah gambar, mohon tunggu...</p>}
+      {uploadError && <p role="alert" className="px-4 py-2 text-sm text-red-600">{uploadError}</p>}
       {/* Editor Content */}
       <div className="relative">
         <EditorContent 

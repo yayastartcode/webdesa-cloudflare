@@ -1,4 +1,6 @@
 'use client';
+import { ImageUploadField } from '@/components/ui/image-upload-field';
+import { usePendingUploads } from '@/lib/upload';
 
 import { useState, useEffect } from 'react';
 import { useSession } from '@/lib/auth-client';
@@ -9,7 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { UploadButton } from '@/lib/upload';
 import { Trash2, Plus, ArrowUp, ArrowDown } from 'lucide-react';
 
 
@@ -23,13 +24,11 @@ interface HeroSlide {
   order: number;
 }
 
-interface UploadResponse {
-  ufsUrl: string;
-  [key: string]: any;
-}
 
 export default function HeroSlidesPage() {
+  const { isUploading, onUploadStateChange } = usePendingUploads();
   const { data: session, status } = useSession() as { data: Session | null; status: string; };
+  const [slideImages, setSlideImages] = useState<Record<string, string>>({});
   const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -70,6 +69,7 @@ export default function HeroSlidesPage() {
   }
 
   const handleAddSlide = async () => {
+    if (isUploading) return;
     if (!newSlide.title || !newSlide.description || !newSlide.imageUrl) {
       setMessage('Please fill in all required fields');
       return;
@@ -259,44 +259,11 @@ export default function HeroSlidesPage() {
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="imageUrl" className="text-black dark:text-white">Image *</Label>
-                  <div className="mt-2">
-                    {newSlide.imageUrl ? (
-                      <div className="space-y-2">
-                        <img 
-                          src={newSlide.imageUrl} 
-                          alt="Preview" 
-                          className="w-32 h-20 object-cover rounded"
-                        />
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setNewSlide({ ...newSlide, imageUrl: '' })}
-                        >
-                          Remove Image
-                        </Button>
-                      </div>
-                    ) : (
-                      <UploadButton
-                        endpoint="imageUploader"
-                        onClientUploadComplete={(res: UploadResponse[]) => {
-                          if (res?.[0]) {
-                            setNewSlide({ ...newSlide, imageUrl: res[0].ufsUrl });
-                          }
-                        }}
-                        onUploadError={(error: Error) => {
-                          console.error('Upload error:', error);
-                          setMessage('Failed to upload image');
-                        }}
-                      />
-                    )}
-                  </div>
-                </div>
+                <ImageUploadField label="Gambar slide" required value={newSlide.imageUrl}
+                  onChange={url => setNewSlide(current => ({ ...current, imageUrl: url }))}
+                  onUploadStateChange={onUploadStateChange} />
 
-
-
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <input
                     type="checkbox"
                     id="isActive"
@@ -310,7 +277,7 @@ export default function HeroSlidesPage() {
                 <div className="flex space-x-2">
                   <Button 
                       onClick={handleAddSlide}
-                      disabled={saving}
+                      disabled={saving || isUploading}
                       className="bg-orange-600 hover:bg-orange-700 text-white"
                     >
                     {saving ? 'Adding...' : 'Add Slide'}
@@ -340,14 +307,16 @@ export default function HeroSlidesPage() {
               slides.map((slide, index) => (
                 <Card key={slide.id}>
                   <CardContent className="p-6">
-                    <div className="flex items-start space-x-4">
-                      <img 
-                        src={slide.imageUrl} 
-                        alt={slide.title}
-                        className="w-24 h-16 object-cover rounded"
-                      />
+                    <div className="flex flex-col gap-4 sm:flex-row">
+                      <div className="w-full space-y-2 sm:w-64 sm:shrink-0">
+                        <ImageUploadField label={`Gambar slide ${slide.title}`} required value={slideImages[slide.id] ?? slide.imageUrl}
+                          onChange={url => setSlideImages(current => ({ ...current, [slide.id]: url }))}
+                          onUploadStateChange={onUploadStateChange} disabled={saving} />
+                        <Button type="button" size="sm" disabled={saving || isUploading || !slideImages[slide.id] || slideImages[slide.id] === slide.imageUrl}
+                          onClick={() => handleUpdateSlide(slide.id, { imageUrl: slideImages[slide.id] })}>Simpan gambar</Button>
+                      </div>
                       <div className="flex-1">
-                        <div className="flex items-start justify-between">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
                           <div>
                             <h3 className="font-semibold text-lg text-black dark:text-white">{slide.title}</h3>
                             <p className="text-gray-600 dark:text-gray-300">{slide.description}</p>
@@ -362,7 +331,7 @@ export default function HeroSlidesPage() {
                               <span className="text-sm text-gray-500 dark:text-gray-400">Order: {slide.order}</span>
                             </div>
                           </div>
-                          <div className="flex items-center space-x-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <Button
                               variant="outline"
                               size="sm"

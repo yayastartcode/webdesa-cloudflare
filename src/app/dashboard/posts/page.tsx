@@ -1,4 +1,6 @@
 "use client";
+import { ImageUploadField } from '@/components/ui/image-upload-field';
+import { usePendingUploads } from '@/lib/upload';
 
 import { useState, useEffect } from "react";
 import { useSession } from "@/lib/auth-client";
@@ -36,6 +38,7 @@ interface PostForm {
 }
 
 export default function PostsPage() {
+  const { isUploading, onUploadStateChange } = usePendingUploads();
   const { data: session, status } = useSession() as { data: Session | null; status: string; };
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
@@ -87,6 +90,7 @@ export default function PostsPage() {
   };
 
   const handleAddPost = async () => {
+    if (isUploading) return;
     if (!newForm.title || !newForm.content) {
       setError("Judul dan konten harus diisi");
       return;
@@ -118,6 +122,7 @@ export default function PostsPage() {
   };
 
   const handleEditPost = async () => {
+    if (isUploading) return;
     if (!editForm.title || !editForm.content || !editingPost) {
       setError("Judul dan konten harus diisi");
       return;
@@ -267,20 +272,15 @@ export default function PostsPage() {
                 <Label className="text-black dark:text-white">Konten Berita</Label>
                 <RichTextEditor
                   value={newForm.content}
-                  onChange={(content) => setNewForm({ ...newForm, content })}
+                  onChange={content => setNewForm(current => ({ ...current, content }))}
+                  onUploadStateChange={onUploadStateChange}
                   placeholder="Masukkan konten berita"
                   className="mt-1"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="text-black dark:text-white">URL Gambar (Opsional)</Label>
-                <Input
-                  value={newForm.imageUrl}
-                  onChange={(e) => setNewForm({ ...newForm, imageUrl: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                  className="text-gray-900 dark:text-white"
-                />
-              </div>
+              <ImageUploadField label="Gambar berita" value={newForm.imageUrl}
+                onChange={url => setNewForm(current => ({ ...current, imageUrl: url }))}
+                onUploadStateChange={onUploadStateChange} />
               <div className="flex items-center space-x-2">
                 <Switch
                   checked={newForm.published}
@@ -289,10 +289,10 @@ export default function PostsPage() {
                 <Label className="text-black dark:text-white">Publikasikan berita</Label>
               </div>
               <div className="flex space-x-2">
-                <Button onClick={handleAddPost} className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Button disabled={isUploading} onClick={handleAddPost} className="bg-blue-600 hover:bg-blue-700 text-white">
                   Simpan Berita
                 </Button>
-                <Button variant="outline" onClick={cancelAdd}>
+                <Button variant="outline" disabled={isUploading} onClick={cancelAdd}>
                   Batal
                 </Button>
               </div>
@@ -323,20 +323,15 @@ export default function PostsPage() {
                 <Label className="text-black dark:text-white">Konten Berita</Label>
                 <RichTextEditor
                   value={editForm.content}
-                  onChange={(content) => setEditForm({ ...editForm, content })}
+                  onChange={content => setEditForm(current => ({ ...current, content }))}
+                  onUploadStateChange={onUploadStateChange}
                   placeholder="Masukkan konten berita"
                   className="mt-1"
                 />
               </div>
-              <div className="space-y-2">
-                <Label className="text-black dark:text-white">URL Gambar (Opsional)</Label>
-                <Input
-                  value={editForm.imageUrl}
-                  onChange={(e) => setEditForm({ ...editForm, imageUrl: e.target.value })}
-                  placeholder="https://example.com/image.jpg"
-                  className="text-gray-900 dark:text-white"
-                />
-              </div>
+              <ImageUploadField label="Gambar berita" value={editForm.imageUrl}
+                onChange={url => setEditForm(current => ({ ...current, imageUrl: url }))}
+                onUploadStateChange={onUploadStateChange} />
               <div className="flex items-center space-x-2">
                 <Switch
                   checked={editForm.published}
@@ -345,10 +340,10 @@ export default function PostsPage() {
                 <Label className="text-black dark:text-white">Publikasikan berita</Label>
               </div>
               <div className="flex space-x-2">
-                <Button onClick={handleEditPost} className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Button disabled={isUploading} onClick={handleEditPost} className="bg-blue-600 hover:bg-blue-700 text-white">
                   Simpan Perubahan
                 </Button>
-                <Button variant="outline" onClick={cancelEdit}>
+                <Button variant="outline" disabled={isUploading} onClick={cancelEdit}>
                   Batal
                 </Button>
               </div>

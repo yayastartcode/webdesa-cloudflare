@@ -1,10 +1,42 @@
 import { request as httpRequest } from 'node:http';
-import { test, expect, request, type APIRequestContext } from '@playwright/test';
+import { test, expect, request, type Page, type Locator, type APIRequestContext } from '@playwright/test';
 
 const origin = 'http://localhost:8788';
 const credentials = { email: 'admin@example.test', password: 'migration-test-password-2026' };
 let api: APIRequestContext;
 const image = 'https://example.com/village.jpg';
+const imageBytes = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/l9sAAAAASUVORK5CYII=', 'base64');
+async function uploadImage(page: Page, label: string) {
+  const field = page.getByRole('group', { name: label, exact: true });
+  const response = page.waitForResponse(r => r.url().endsWith('/api/uploads?type=image') && r.request().method() === 'POST');
+  await field.locator('input[type="file"]').setInputFiles({ name: 'village.png', mimeType: 'image/png', buffer: imageBytes });
+  const result = await response;
+  expect(result.status(), await result.text()).toBe(201);
+  const { url } = await result.json();
+  await expect(field.getByRole('img')).toHaveAttribute('src', url);
+  return url as string;
+}
+async function saveImageForm(page: Page, path: string, method: string, button: Locator) {
+  const response = page.waitForResponse(r => r.url().endsWith(path) && r.request().method() === method);
+  await button.click();
+  const result = await response;
+  expect(result.ok()).toBe(true);
+  // Check persistence through an independent read, without depending on a browser
+  // retaining a response body after its fetch handler has already consumed it.
+  const payload = result.request().postDataJSON();
+  let lookup = path;
+  if (method === 'POST' && path === '/api/posts') lookup += '?admin=true&limit=100';
+  if (method === 'POST' && path === '/api/gallery') lookup += '?limit=100';
+  const persisted = await api.get(lookup);
+  expect(persisted.ok()).toBe(true);
+  const value = await persisted.json();
+  if (method === 'POST' && (path === '/api/posts' || path === '/api/employees')) {
+    return { data: value.data.find((row: { title?: string; name?: string }) => path === '/api/posts' ? row.title === payload.title : row.name === payload.name) };
+  }
+  if (method === 'POST' && path === '/api/gallery') return { gallery: value.galleries.find((row: { title: string }) => row.title === payload.title) };
+  if (method === 'POST' && path === '/api/hero-slides') return value.find((row: { title: string }) => row.title === payload.title);
+  return value;
+}
 test.describe.serial('Cloudflare migration', () => {
   test.beforeAll(async () => { api = await request.newContext({ baseURL: origin, extraHTTPHeaders: { Origin: origin } }); });
   test.afterAll(async () => { await api.dispose(); });
@@ -185,4 +217,92 @@ test.describe.serial('Cloudflare migration', () => {
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     expect(errors).toEqual([]);
   });
+  test('news covers, inline editor images, employee photos and logos upload and persist', async ({ page }) => {
+    await page.context().addCookies((await api.storageState()).cookies);
+    await page.route('https://example.com/**', route => route.fulfill({ body: '' }));
+    await page.goto('/dashboard/posts', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'Tambah Berita', exact: true }).click();
+    await page.getByPlaceholder('Masukkan judul berita').fill('Berita upload');
+    await page.locator('.tiptap-editor [contenteditable="true"]').fill('Berita dengan foto.');
+    const field = page.getByRole('group', { name: 'Gambar berita', exact: true });
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    const delayedUpload = async (route: import('@playwright/test').Route) => { await gate; await route.continue(); };
+    await page.route('**/api/uploads?type=image', delayedUpload);
+    const uploading = page.waitForResponse(r => r.url().endsWith('/api/uploads?type=image'));
+    await field.locator('input[type="file"]').setInputFiles({ name: 'cover.png', mimeType: 'image/png', buffer: imageBytes });
+    await expect(page.getByRole('button', { name: 'Simpan Berita', exact: true })).toBeDisabled();
+    await page.getByPlaceholder('Masukkan judul berita').fill('Berita upload terbaru');
+    release();
+    const cover = (await (await uploading).json()).url;
+    await expect(field.getByRole('img')).toHaveAttribute('src', cover);
+    await page.unroute('**/api/uploads?type=image', delayedUpload);
+    await field.locator('input[type="file"]').setInputFiles({ name: 'invalid.txt', mimeType: 'text/plain', buffer: Buffer.from('no image') });
+    await expect(field.getByRole('alert')).toContainText('Jenis file tidak didukung');
+    await expect(field.getByRole('img')).toHaveAttribute('src', cover);
+    await field.locator('input[type="file"]').setInputFiles({ name: 'large.png', mimeType: 'image/png', buffer: Buffer.alloc(4 * 1024 * 1024 + 1) });
+    await expect(field.getByRole('alert')).toContainText('Ukuran file terlalu besar');
+    const inlineUpload = page.waitForResponse(r => r.url().endsWith('/api/uploads?type=image'));
+    await page.getByLabel('Upload gambar dalam konten', { exact: true }).setInputFiles({ name: 'inline.png', mimeType: 'image/png', buffer: Buffer.concat([imageBytes, Buffer.alloc(600_000)]) });
+    const inline = (await (await inlineUpload).json()).url;
+    await expect(page.getByRole('img', { name: 'inline.png', exact: true })).toHaveAttribute('src', inline);
+    const post = (await saveImageForm(page, '/api/posts', 'POST', page.getByRole('button', { name: 'Simpan Berita', exact: true }))).data;
+    expect(post.title).toBe('Berita upload terbaru'); expect(post.imageUrl).toBe(cover);
+    expect(post.content).toContain(inline); expect(post.content).not.toContain('data:image'); expect(post.content.length).toBeLessThan(5000);
+    await page.getByRole('button', { name: 'Edit Berita upload terbaru', exact: true }).click();
+    const editedCover = await uploadImage(page, 'Gambar berita');
+    expect((await saveImageForm(page, `/api/posts/${post.id}`, 'PUT', page.getByRole('button', { name: 'Simpan Perubahan', exact: true }))).data.imageUrl).toBe(editedCover);
+
+    await page.goto('/dashboard/employees', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'Tambah Pegawai', exact: true }).first().click();
+    await page.getByLabel('Nama Lengkap', { exact: true }).fill('Pegawai upload');
+    await page.getByLabel('Jabatan', { exact: true }).fill('Sekretaris');
+    const photo = await uploadImage(page, 'Foto pegawai');
+    const employee = (await saveImageForm(page, '/api/employees', 'POST', page.getByRole('button', { name: 'Simpan', exact: true }))).data;
+    expect(employee.photoUrl).toBe(photo);
+    await page.getByRole('button', { name: 'Edit Pegawai upload', exact: true }).click();
+    const updatedPhoto = await uploadImage(page, 'Foto pegawai');
+    expect((await saveImageForm(page, `/api/employees/${employee.id}`, 'PUT', page.getByRole('button', { name: 'Simpan', exact: true }))).data.photoUrl).toBe(updatedPhoto);
+
+    await page.goto('/dashboard/header-settings', { waitUntil: 'domcontentloaded' });
+    const logo = await uploadImage(page, 'Logo website');
+    expect((await saveImageForm(page, '/api/header-settings', 'POST', page.getByRole('button', { name: 'Simpan Pengaturan', exact: true }))).logoUrl).toBe(logo);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('group', { name: 'Logo website', exact: true }).getByRole('img')).toHaveAttribute('src', logo);
+  });
+
+  test('gallery, new and existing slide images, and welcome images upload and persist', async ({ page }) => {
+    await page.context().addCookies((await api.storageState()).cookies);
+    await page.route('https://example.com/**', route => route.fulfill({ body: '' }));
+    page.on('dialog', dialog => dialog.accept());
+    await page.goto('/dashboard/gallery', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'Tambah Item', exact: true }).click();
+    await page.getByPlaceholder('Masukkan judul kegiatan').fill('Galeri upload');
+    const galleryImage = await uploadImage(page, 'Gambar galeri');
+    const gallery = (await saveImageForm(page, '/api/gallery', 'POST', page.getByRole('button', { name: 'Simpan', exact: true }))).gallery;
+    expect(gallery.imageUrl).toBe(galleryImage);
+    await page.getByRole('button', { name: 'Edit Galeri upload', exact: true }).click();
+    const replacement = await uploadImage(page, 'Gambar galeri');
+    expect((await saveImageForm(page, `/api/gallery/${gallery.id}`, 'PATCH', page.getByRole('button', { name: 'Perbarui', exact: true }))).gallery.imageUrl).toBe(replacement);
+
+    await page.goto('/dashboard/hero-slides', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'Add New Slide', exact: true }).click();
+    await page.getByLabel('Title *', { exact: true }).fill('Slide upload');
+    await page.getByLabel('Description *', { exact: true }).fill('Gambar desa');
+    const slideImage = await uploadImage(page, 'Gambar slide');
+    const slide = await saveImageForm(page, '/api/hero-slides', 'POST', page.getByRole('button', { name: 'Add Slide', exact: true }));
+    expect(slide.imageUrl).toBe(slideImage);
+    const changedSlide = await uploadImage(page, 'Gambar slide Slide upload');
+    const saveSlide = page.getByRole('group', { name: 'Gambar slide Slide upload', exact: true }).locator('..').getByRole('button', { name: 'Simpan gambar', exact: true });
+    expect((await saveImageForm(page, `/api/hero-slides/${slide.id}`, 'PATCH', saveSlide)).imageUrl).toBe(changedSlide);
+
+    await page.goto('/dashboard/village-head-welcome', { waitUntil: 'domcontentloaded' });
+    const welcomeUpload = page.waitForResponse(r => r.url().endsWith('/api/uploads?type=image'));
+    await page.getByLabel('Upload gambar dalam sambutan', { exact: true }).setInputFiles({ name: 'welcome.png', mimeType: 'image/png', buffer: imageBytes });
+    const welcomeImage = (await (await welcomeUpload).json()).url;
+    await expect(page.locator('textarea')).toHaveValue(new RegExp(welcomeImage));
+    const welcome = await saveImageForm(page, '/api/village-head-welcome', 'POST', page.getByRole('button', { name: 'Simpan', exact: true }));
+    expect(welcome.data.content).toContain(`![Gambar sambutan](${welcomeImage})`);
+  });
+
 });
