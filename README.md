@@ -1,6 +1,6 @@
 # Webdesa Cloudflare — staging terpisah
 
-Aplikasi Desa Gimpubia menggunakan React + Vite pada Cloudflare Pages, Pages Functions untuk API, D1 + Drizzle, R2 untuk gambar/PDF, dan Better Auth untuk sesi administrator. Seluruh halaman dan komponen UI lama tetap digunakan.
+Aplikasi Desa Lomaer menggunakan React + Vite pada Cloudflare Pages, Pages Functions untuk API, D1 + Drizzle, R2 untuk gambar/PDF, dan Better Auth untuk sesi administrator. Seluruh halaman dan komponen UI lama tetap digunakan.
 
 ## Staging
 

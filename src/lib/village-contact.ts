@@ -1,9 +1,9 @@
 export const defaultVillageContact = {
-  officeName: 'Kantor Desa Gimpubia',
-  address: 'Gimpubia, Kec. Pinembani, Kabupaten Donggala, Sulawesi Tengah',
-  openingHours: 'Senin - Jumat\n08:00 - 16:00 WITA',
+  officeName: 'Kantor Desa Lomaer',
+  address: 'Desa Lomaer',
+  openingHours: 'Senin - Jumat\n08:00 - 16:00',
   phone: '', whatsapp: '', email: '', mapLink: '',
-  mapEmbedUrl: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d31913.123053851446!2d119.70672850000001!3d-1.0562395!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2d8c75f9ebfa2169%3A0xd9db005d197e03a7!2sGimpubia%2C%20Kec.%20Pinembani%2C%20Kabupaten%20Donggala%2C%20Sulawesi%20Tengah!5e0!3m2!1sid!2sid!4v1753144275546!5m2!1sid!2sid',
+  mapEmbedUrl: '',
 };
 export type VillageContact = typeof defaultVillageContact;
 const googleHosts = ['google.com', 'www.google.com', 'maps.google.com', 'google.co.id', 'www.google.co.id', 'maps.google.co.id'];

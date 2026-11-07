@@ -53,7 +53,7 @@ export default function DashboardPage() {
           <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
           <Alert className="mb-6">
             <AlertDescription>
-              Selamat datang di dashboard admin Desasa! Anda berhasil masuk sebagai administrator.
+              Selamat datang di dashboard admin Desa Lomaer! Anda berhasil masuk sebagai administrator.
             </AlertDescription>
           </Alert>
 

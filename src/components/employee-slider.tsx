@@ -75,7 +75,7 @@ export default function EmployeeSlider({ employees }: EmployeeSliderProps) {
         {/* Header */}
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-            Pegawai Desa Kersik
+            Pegawai Desa Lomaer
           </h2>
           <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
             Berkenalan dengan tim pegawai desa yang siap melayani masyarakat dengan dedikasi dan profesionalisme

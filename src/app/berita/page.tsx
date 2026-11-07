@@ -285,7 +285,7 @@ export default function BeritaPage() {
           <div className="text-left">
             <h1 className="text-3xl font-bold mb-2">Berita Desa</h1>
             <p className="text-red-100">
-              Menyajikan informasi terbaru tentang peristiwa, berita terkini, dan artikel-artikel jurnalistik dari Desa Gimpubia
+              Menyajikan informasi terbaru tentang peristiwa, berita terkini, dan artikel-artikel jurnalistik dari Desa Lomaer
             </p>
           </div>
         </div>

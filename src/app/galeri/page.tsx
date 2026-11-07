@@ -146,7 +146,7 @@ export default function GalleryPage() {
               {headerSettings?.logoUrl ? (
                 <Image
                   src={headerSettings.logoUrl}
-                  alt="Logo Desasa"
+                  alt="Logo Desa Lomaer"
                   width={40}
                   height={40}
                   className="w-10 h-10 object-contain"
@@ -157,7 +157,7 @@ export default function GalleryPage() {
                 </div>
               )}
               <span className="text-xl font-bold text-white">
-                Desasa
+                Desa Lomaer
               </span>
             </Link>
 

@@ -51,7 +51,7 @@ export function DashboardLayout() {
               onClick={() => setMenuOpen(open => !open)}>
               {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
-            <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="whitespace-nowrap text-lg font-bold text-orange-600 dark:text-orange-400">Desasa Admin</Link>
+            <Link to="/dashboard" onClick={() => setMenuOpen(false)} className="whitespace-nowrap text-lg font-bold text-orange-600 dark:text-orange-400">Desa Lomaer</Link>
           </div>
           <div className="flex items-center gap-1 sm:gap-4">
             <span className="hidden text-sm text-gray-500 dark:text-gray-400 xl:inline">{session?.user.name || session?.user.email}</span>

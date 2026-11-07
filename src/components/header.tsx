@@ -60,7 +60,7 @@ export default function Header({ logoUrl, navigationItems = [] }: HeaderProps) {
             {logoUrl ? (
               <Image
                 src={logoUrl}
-                alt="Logo Desasa"
+                alt="Logo Desa Lomaer"
                 width={96}
                 height={96}
                 className="w-24 h-24 object-contain"
@@ -75,8 +75,8 @@ export default function Header({ logoUrl, navigationItems = [] }: HeaderProps) {
                 isScrolled ? "text-white" : "text-white drop-shadow-lg"
               }`}
             >
-              Desa Gimpubia <br />
-              Kabupaten Donggala
+              Desa Lomaer <br />
+              Website Resmi Desa
             </span>
           </Link>
 

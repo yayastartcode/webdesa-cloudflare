@@ -176,7 +176,7 @@ export default function Home() {
           <div className="text-center text-gray-600 dark:text-gray-300">
             <p>Dibuat dengan ❤️ untuk Indonesia</p>
             <p className="text-sm mt-2">
-              Powered by Desa Gimpubia
+              Powered by Desa Lomaer
             </p>
           </div>
         </div>

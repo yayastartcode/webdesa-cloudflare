@@ -33,15 +33,15 @@ export default function VillageHeadWelcomeSection({
   }, []);
 
   // Default content if no welcome message is provided
-  const defaultContent = `# Sambutan Kepala Desa Gimpubia
+  const defaultContent = `# Sambutan Kepala Desa Lomaer
 
 **Assalamu Alaikum Warahmatullahi Wabarakatu.**
 
-Website ini hadir sebagai wujud transformasi desa Gimpubia menjadi desa yang mampu memanfaatkan teknologi informasi dan komunikasi. Terintegrasi kedalam sistem online, Keterbukaan informasi publik, pelayanan publik dan kegiatan perekonomian di desa, guna mewujudkan desa Kersik sebagai desa wisata yang berkelanjutan, adaptasi dan mitigasi terhadap perubahan iklim serta menjadi desa yang mandiri.
+Website ini hadir sebagai wujud transformasi Desa Lomaer menjadi desa yang mampu memanfaatkan teknologi informasi dan komunikasi. Terintegrasi kedalam sistem online, Keterbukaan informasi publik, pelayanan publik dan kegiatan perekonomian di desa, guna mewujudkan Desa Lomaer sebagai desa wisata yang berkelanjutan, adaptasi dan mitigasi terhadap perubahan iklim serta menjadi desa yang mandiri.
 
 Terima kasih kepada semua pihak yang telah banyak memberi dukungan dan kontribusi baik berupa pemikiran, tenaga, maupun materi dalam pembangunan website ini.
 
-*Kepala Desa Gimpubia*`;
+*Kepala Desa Lomaer*`;
 
   const content = welcome?.content || defaultContent;
 
@@ -59,7 +59,7 @@ Terima kasih kepada semua pihak yang telah banyak memberi dukungan dan kontribus
                     {logoUrl ? (
                       <Image
                         src={logoUrl}
-                        alt="Logo Desa Kersik"
+                        alt="Logo Desa Lomaer"
                         width={120}
                         height={120}
                         className="w-30 h-30 object-contain bg-white rounded-full p-2 shadow-lg"
@@ -75,12 +75,12 @@ Terima kasih kepada semua pihak yang telah banyak memberi dukungan dan kontribus
                   
                   {/* Village Info */}
                   <div className="space-y-2">
-                    <h2 className="text-2xl font-bold">Desa Gimpubia</h2>
+                    <h2 className="text-2xl font-bold">Desa Lomaer</h2>
                     <p className="text-green-100 text-sm">
-                      Kabupaten Donggala
+                      Pemerintah Desa Lomaer
                     </p>
                     <p className="text-green-100 text-sm">
-                      Provinsi Sulawesi Tengah
+                      Pelayanan dan Informasi Desa
                     </p>
                   </div>
                   
@@ -107,16 +107,16 @@ Terima kasih kepada semua pihak yang telah banyak memberi dukungan dan kontribus
                   ) : (
                     <div className="space-y-4">
                       <h1 className="text-3xl font-bold text-red-600 mb-4">
-                        Sambutan Kepala Desa Kersik
+                        Sambutan Kepala Desa Lomaer
                       </h1>
                       <div className="text-gray-600 dark:text-gray-300 leading-relaxed">
                         <p className="mb-4">
                           <strong>Assalamu Alaikum Warahmatullahi Wabarakatu.</strong>
                         </p>
                         <p className="mb-4">
-                          Website ini hadir sebagai wujud transformasi desa Kersik menjadi desa yang mampu memanfaatkan 
+                          Website ini hadir sebagai wujud transformasi Desa Lomaer menjadi desa yang mampu memanfaatkan
                           teknologi informasi dan komunikasi. Terintegrasi kedalam sistem online, Keterbukaan informasi 
-                          publik, pelayanan publik dan kegiatan perekonomian di desa, guna mewujudkan desa Kersik sebagai 
+                          publik, pelayanan publik dan kegiatan perekonomian di desa, guna mewujudkan Desa Lomaer sebagai
                           desa wisata yang berkelanjutan, adaptasi dan mitigasi terhadap perubahan iklim serta menjadi desa 
                           yang mandiri.
                         </p>
@@ -125,7 +125,7 @@ Terima kasih kepada semua pihak yang telah banyak memberi dukungan dan kontribus
                           pemikiran, tenaga, maupun materi dalam pembangunan website ini.
                         </p>
                         <p className="text-right italic">
-                          Kepala Desa Kersik
+                          Kepala Desa Lomaer
                         </p>
                       </div>
                     </div>

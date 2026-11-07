@@ -145,7 +145,7 @@ export default function PopulationDemographics({ data }: PopulationDemographicsP
         {/* Additional Info */}
         <div className="mt-12 text-center">
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Data diperbarui secara berkala • Sumber: Administrasi Desa Kersik
+            Data diperbarui secara berkala • Sumber: Administrasi Desa Lomaer
           </p>
         </div>
       </div>

@@ -90,7 +90,7 @@ export default function BeritaList() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Berita Terkini</h2>
-            <p className="text-gray-600">Informasi terbaru dari Desa Gimpubia</p>
+            <p className="text-gray-600">Informasi terbaru dari Desa Lomaer</p>
           </div>
           <div className="flex justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
@@ -106,7 +106,7 @@ export default function BeritaList() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Berita Terkini</h2>
-            <p className="text-gray-600">Informasi terbaru dari Desa Kersik</p>
+            <p className="text-gray-600">Informasi terbaru dari Desa Lomaer</p>
           </div>
           <div className="text-center">
             <p className="text-gray-500">Belum ada berita tersedia</p>
@@ -121,7 +121,7 @@ export default function BeritaList() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Berita Terkini</h2>
-          <p className="text-gray-600">Informasi terbaru dari Desa Kersik</p>
+          <p className="text-gray-600">Informasi terbaru dari Desa Lomaer</p>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">

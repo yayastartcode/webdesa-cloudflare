@@ -28,7 +28,7 @@ export default function HeroSlider({
   const defaultSlides: SlideData[] = [
     {
       id: "1",
-      title: "Selamat Datang di Desasa",
+      title: "Selamat Datang di Desa Lomaer",
       description: "Menghubungkan masyarakat desa dengan teknologi terdepan untuk pelayanan yang lebih baik dan transparansi yang optimal.",
       imageUrl: "/api/placeholder/1920/800"
     },

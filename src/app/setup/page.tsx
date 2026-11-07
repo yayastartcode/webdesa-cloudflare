@@ -12,7 +12,7 @@ import { Eye, EyeOff } from "lucide-react";
 export default function SetupPage() {
   const [setupToken, setSetupToken] = useState("");
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("admin@desasa.com");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -121,7 +121,7 @@ export default function SetupPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-red-50 dark:from-gray-900 dark:to-gray-800">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">Setup Admin Desasa</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center">Setup Admin Desa Lomaer</CardTitle>
           <CardDescription className="text-center">
             Buat akun administrator untuk mengelola sistem
           </CardDescription>
@@ -149,7 +149,7 @@ export default function SetupPage() {
               <Input
                 id="name"
                 type="text"
-                placeholder="Administrator Desasa"
+                placeholder="Administrator Desa Lomaer"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -161,7 +161,7 @@ export default function SetupPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@desasa.com"
+                placeholder="admin@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
