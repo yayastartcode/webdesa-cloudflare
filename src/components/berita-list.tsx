@@ -84,37 +84,7 @@ export default function BeritaList() {
     return extractFirstImageFromContent(post.content);
   };
 
-  if (loading) {
-    return (
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Berita Terkini</h2>
-            <p className="text-gray-600">Informasi terbaru dari Desa Lomaer</p>
-          </div>
-          <div className="flex justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (posts.length === 0) {
-    return (
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Berita Terkini</h2>
-            <p className="text-gray-600">Informasi terbaru dari Desa Lomaer</p>
-          </div>
-          <div className="text-center">
-            <p className="text-gray-500">Belum ada berita tersedia</p>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  if (loading || posts.length === 0) return null;
 
   return (
     <section className="py-16 bg-white">

@@ -412,4 +412,48 @@ test.describe.serial('Cloudflare migration', () => {
     await expect(page.getByText('Jalan Pelayanan 123', { exact: true })).toBeVisible();
   });
 
+  test('homepage hides unfilled sections and reveals saved data, including valid zero values', async ({ page }) => {
+    let mode: 'empty' | 'filled' | 'error' = 'empty';
+    const now = new Date().toISOString();
+    const filled: Record<string, unknown> = {
+      '/api/apb-desa': { success: true, data: { id: 'budget', year: 2026, pendapatanDesa: 0, belanjaDesa: 0, isActive: true, createdAt: now, updatedAt: now } },
+      '/api/population-data': { success: true, data: { id: 'population', totalPopulation: 0, malePopulation: 0, femalePopulation: 0, households: 0, temporaryResidents: 0, populationMutations: 0 } },
+      '/api/employees': { success: true, data: [{ id: 'employee', name: 'Pegawai Pengujian', position: 'Pelayanan', order: 0 }] },
+      '/api/posts': { data: [{ id: 'post', title: 'Kegiatan Pengujian', content: '<p>Berita kegiatan warga.</p>', published: true, createdAt: now, updatedAt: now, author: { name: 'Admin', email: 'admin@example.test' } }] },
+      '/api/gallery': { galleries: [{ id: 'photo', title: 'Foto Pengujian', imageUrl: '/favicon.ico', isActive: true, order: 0, createdAt: now, updatedAt: now }], categories: [] },
+    };
+    const empty: Record<string, unknown> = {
+      '/api/apb-desa': { success: true, data: null }, '/api/population-data': { success: true, data: null },
+      '/api/employees': { success: true, data: [] }, '/api/posts': { data: [] }, '/api/gallery': { galleries: [], categories: [] },
+    };
+    await page.route('**/api/**', route => {
+      const path = new URL(route.request().url()).pathname;
+      if (path === '/api/hero-slides') return route.fulfill({ json: [] });
+      if (!(path in filled)) return route.continue();
+      return route.fulfill({ status: mode === 'error' ? 503 : 200, json: mode === 'filled' ? filled[path] : mode === 'empty' ? empty[path] : { success: false, error: 'Service unavailable' } });
+    });
+    async function visitHome() {
+      const responses = Object.keys(filled).map(path => page.waitForResponse(r => new URL(r.url()).pathname === path));
+      await page.goto('/', { waitUntil: 'domcontentloaded' });
+      await Promise.all(responses);
+      await expect(page.getByRole('heading', { name: 'Selamat Datang di Desa Lomaer', exact: true })).toBeVisible();
+    }
+    const sectionNames = [/^APB DESA/, /^Administrasi Penduduk$/, /^Pegawai Desa Lomaer$/, /^Berita Terkini$/, /^Galeri Kegiatan$/];
+    await visitHome();
+    for (const name of sectionNames) await expect(page.getByRole('heading', { name })).toHaveCount(0);
+    await expect(page.locator('body')).not.toContainText(/Data APB Desa tidak tersedia|belum tersedia|Belum ada berita|Belum ada foto|Memuat data|Mode Pengembangan/);
+    await expect(page.locator('img[src^="/api/placeholder/"]')).toHaveCount(0);
+    mode = 'filled';
+    await visitHome();
+    for (const name of sectionNames) await expect(page.getByRole('heading', { name })).toBeVisible();
+    await expect(page.getByText('Rp0,00', { exact: true })).toHaveCount(2);
+    await expect(page.getByText('Pegawai Pengujian', { exact: true })).toBeVisible();
+    await expect(page.getByText('Kegiatan Pengujian', { exact: true })).toBeVisible();
+    await expect(page.getByText('Foto Pengujian', { exact: true })).toBeVisible();
+    mode = 'error';
+    await visitHome();
+    for (const name of sectionNames) await expect(page.getByRole('heading', { name })).toHaveCount(0);
+    await expect(page.locator('body')).not.toContainText(/Service unavailable|Gagal memuat|Terjadi kesalahan|Data APB Desa tidak tersedia/);
+  });
+
 });

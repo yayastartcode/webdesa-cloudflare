@@ -52,22 +52,7 @@ export default function EmployeeSlider({ employees }: EmployeeSliderProps) {
     setCurrentIndex(Math.min(index, maxIndex));
   };
 
-  if (!employees || employees.length === 0) {
-    return (
-      <section className="py-16 bg-white dark:bg-gray-900">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Pegawai Desa
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Data pegawai belum tersedia
-            </p>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  if (!employees || employees.length === 0) return null;
 
   return (
     <section className="py-16 bg-white dark:bg-gray-900">

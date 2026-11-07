@@ -87,6 +87,8 @@ const HelpdeskForm = () => {
 
   const isFormValid = formData.nama && formData.nomorWhatsapp && formData.kategoriPengaduan && formData.pesanPengaduan && (isRecaptchaEnabled ? recaptchaValue : true);
 
+  if (!isRecaptchaEnabled) return null;
+
   return (
     <section className="py-16 bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4">
@@ -184,23 +186,9 @@ const HelpdeskForm = () => {
                 </div>
 
                 {/* reCAPTCHA */}
-                {isRecaptchaEnabled ? (
-                  <div className="flex justify-center">
-                    <ReCAPTCHA
-                      ref={recaptchaRef}
-                      sitekey={recaptchaSiteKey!}
-                      onChange={setRecaptchaValue}
-                      onExpired={() => setRecaptchaValue(null)}
-                    />
-                  </div>
-                ) : (
-                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                    <p className="text-sm text-yellow-800">
-                      <strong>Mode Pengembangan:</strong> reCAPTCHA tidak dikonfigurasi. 
-                      Untuk produksi, silakan tambahkan kunci reCAPTCHA di file .env.local
-                    </p>
-                  </div>
-                )}
+                <div className="flex justify-center">
+                  <ReCAPTCHA ref={recaptchaRef} sitekey={recaptchaSiteKey!} onChange={setRecaptchaValue} theme="light" />
+                </div>
 
                 <Button
                   type="submit"

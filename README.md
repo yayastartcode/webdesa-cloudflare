@@ -44,6 +44,10 @@ Menu Halaman Info menyediakan judul, keterangan singkat maksimal 500 karakter, l
 
 Menu Peta & Kontak mengatur nama kantor, alamat, jam layanan, telepon, WhatsApp, email, sematan Google Maps, dan tautan peta. Perubahan ditampilkan di beranda dan `/contact`. Sematan menerima URL Google Maps atau kode iframe dari fitur Bagikan → Sematkan peta. Jalankan migrasi D1 terbaru sebelum memakai fitur ini.
 
+## Bagian beranda yang belum diisi
+
+APB Desa, statistik penduduk, pegawai, berita, dan galeri di beranda tampil setelah data tersedia. Data kosong, permintaan yang gagal, dan proses pemuatan tidak menampilkan banner atau bagian kosong. Nilai tersimpan sebesar 0 tetap ditampilkan. Statistik tidak memakai angka contoh. Foto hero yang belum diisi memakai latar gradasi. Kartu kontak dan jam layanan yang kosong disembunyikan; form pengaduan tampil setelah kunci reCAPTCHA frontend dikonfigurasi. Pesan pengelolaan data di dashboard dan keadaan kosong pada halaman daftar tetap tersedia.
+
 ## Validasi
 
 ```sh

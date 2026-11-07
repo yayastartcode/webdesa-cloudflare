@@ -15,67 +15,27 @@ interface ApbDesaData {
 
 export default function ApbDesaSection() {
   const [apbData, setApbData] = useState<ApbDesaData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
+    const controller = new AbortController();
     const fetchApbData = async () => {
       try {
-        const response = await fetch('/api/apb-desa');
+        const response = await fetch('/api/apb-desa', { signal: controller.signal });
+        if (!response.ok) return;
         const result = await response.json();
-        
-        if (result.success) {
-          setApbData(result.data);
-        } else {
-          setError('Gagal memuat data APB Desa');
-        }
+        if (result.success) setApbData(result.data);
       } catch (error) {
-        console.error('Error fetching APB Desa data:', error);
-        setError('Terjadi kesalahan saat memuat data');
-      } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) console.error('Error fetching APB Desa data:', error);
       }
     };
-
-    fetchApbData();
+    void fetchApbData();
+    return () => controller.abort();
   }, []);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount).replace('IDR', 'Rp');
-  };
 
   const formatCurrencyShort = (amount: number) => {
     return new Intl.NumberFormat('id-ID').format(amount);
   };
 
-  if (loading) {
-    return (
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <p className="text-gray-600">Memuat data APB Desa...</p>
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (error || !apbData) {
-    return (
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <p className="text-red-600">{error || 'Data APB Desa tidak tersedia'}</p>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  if (!apbData || !apbData.isActive) return null;
 
   const currentYear = new Date().getFullYear();
   const displayYear = apbData.year || currentYear;

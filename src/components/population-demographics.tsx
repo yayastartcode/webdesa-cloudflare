@@ -17,50 +17,31 @@ interface PopulationDemographicsProps {
 }
 
 export default function PopulationDemographics({ data }: PopulationDemographicsProps) {
-  const [populationData, setPopulationData] = useState<PopulationData | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Default data if none provided
-  const defaultData: PopulationData = {
-    totalPopulation: 1148,
-    malePopulation: 605,
-    femalePopulation: 543,
-    households: 303,
-    temporaryResidents: 73,
-    populationMutations: 36
-  };
+  const [populationData, setPopulationData] = useState<PopulationData | null>(data ?? null);
 
   useEffect(() => {
     if (data) {
       setPopulationData(data);
-      setLoading(false);
-    } else {
-      fetchPopulationData();
+      return;
     }
+    const controller = new AbortController();
+    setPopulationData(null);
+    const fetchPopulationData = async () => {
+      try {
+        const response = await fetch('/api/population-data', { signal: controller.signal });
+        if (!response.ok) return;
+        const result = await response.json();
+        if (result.success) setPopulationData(result.data);
+      } catch (error) {
+        if (!controller.signal.aborted) console.error('Error fetching population data:', error);
+      }
+    };
+    void fetchPopulationData();
+    return () => controller.abort();
   }, [data]);
 
-  const fetchPopulationData = async () => {
-    try {
-      const response = await fetch('/api/population-data');
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          setPopulationData(result.data);
-        } else {
-          setPopulationData(defaultData);
-        }
-      } else {
-        setPopulationData(defaultData);
-      }
-    } catch (error) {
-      console.error('Error fetching population data:', error);
-      setPopulationData(defaultData);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const currentData = populationData || defaultData;
+  if (!populationData) return null;
+  const currentData = populationData;
 
   const stats = [
     {
@@ -95,18 +76,6 @@ export default function PopulationDemographics({ data }: PopulationDemographicsP
     }
   ];
 
-  if (loading) {
-    return (
-      <section className="py-16 bg-gray-50 dark:bg-gray-800">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-400">Memuat data kependudukan...</p>
-          </div>
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section className="py-16 bg-gray-50 dark:bg-gray-800">

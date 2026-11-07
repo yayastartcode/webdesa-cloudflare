@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, Camera } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "@/lib/router-link";
 import Image from "@/components/image";
 
@@ -44,50 +44,7 @@ export default function GalleryPreview() {
     fetchGalleryItems();
   }, []);
 
-  if (loading) {
-    return (
-      <section className="py-16 bg-gray-50 dark:bg-gray-900">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Galeri Kegiatan
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300">
-              Dokumentasi kegiatan dan momen penting di desa
-            </p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, index) => (
-              <div key={index} className="bg-gray-200 dark:bg-gray-700 rounded-lg h-64 animate-pulse"></div>
-            ))}
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (galleryItems.length === 0) {
-    return (
-      <section className="py-16 bg-gray-50 dark:bg-gray-900">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Galeri Kegiatan
-            </h2>
-            <p className="text-gray-600 dark:text-gray-300">
-              Dokumentasi kegiatan dan momen penting di desa
-            </p>
-          </div>
-          <div className="text-center py-12">
-            <Camera className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">
-              Belum ada foto dalam galeri
-            </p>
-          </div>
-        </div>
-      </section>
-    );
-  }
+  if (loading || galleryItems.length === 0) return null;
 
   return (
     <section className="py-16 bg-gray-50 dark:bg-gray-900">

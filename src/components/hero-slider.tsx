@@ -85,14 +85,14 @@ export default function HeroSlider({
           }`}
         >
           {/* Background Image */}
-          <div className="absolute inset-0">
-            <Image
+          <div className="absolute inset-0 bg-gradient-to-br from-red-800 via-red-700 to-orange-600">
+            {slide.imageUrl && !slide.imageUrl.startsWith("/api/placeholder/") && <Image
               src={slide.imageUrl}
               alt={slide.title}
               fill
               className="object-cover"
               priority={index === 0}
-            />
+            />}
             {/* Overlay */}
             <div className="absolute inset-0 bg-black/40" />
           </div>
