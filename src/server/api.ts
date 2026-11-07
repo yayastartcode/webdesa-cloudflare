@@ -1,3 +1,4 @@
+import { createHandlers as homepageSettingsHandlers } from './routes/homepage-settings/route';
 import { createHandlers as villageContactHandlers } from './routes/village-contact/route';
 import { ZodError } from 'zod';
 import { readBody, allBodies } from './validation';
@@ -29,6 +30,7 @@ import { createHandlers as route20 } from './routes/village-info/route';
 
 type Handler = (request: Request, context: { params: Promise<{ id: string; slug: string }> }) => Promise<Response>;
 const routes = [
+  { path: '/api/homepage-settings', create: homepageSettingsHandlers },
   { path: '/api/village-contact', create: villageContactHandlers },
   { path: '/api/admin/check', create: route0 },
   { path: '/api/apb-desa', create: route3 },

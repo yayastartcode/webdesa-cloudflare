@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { UploadDemo } from "@/components/upload-demo";
+import type { HomeSections } from '@/lib/home-sections';
 import Header from "@/components/header";
 import HeroSlider from "@/components/hero-slider";
 import VillageInfoSection from "@/components/village-info";
@@ -60,12 +59,21 @@ interface Employee {
 }
 
 export default function Home() {
+  const [sections, setSections] = useState<HomeSections | null>(null);
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
   const [headerSettings, setHeaderSettings] = useState<HeaderSettings | null>(null);
   const [villageInfo, setVillageInfo] = useState<VillageInfo | null>(null);
   const [villageHeadWelcome, setVillageHeadWelcome] = useState<VillageHeadWelcome | undefined>(undefined);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/homepage-settings', { signal: controller.signal }).then(async response => {
+      if (response.ok) { const result = await response.json(); if (result.success) setSections(result.data.sections); }
+    }).catch(error => { if (!controller.signal.aborted) console.error('Error fetching homepage settings:', error); });
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -139,34 +147,34 @@ export default function Home() {
       {!loading && <HeroSlider slides={heroSlides} />}
 
       {/* Village Info Section */}
-      <VillageInfoSection villageInfo={villageInfo} />
+      {sections?.villageInfo && <VillageInfoSection villageInfo={villageInfo} />}
 
       {/* Village Head Welcome Section */}
-      <VillageHeadWelcomeSection 
+      {sections?.villageHeadWelcome && <VillageHeadWelcomeSection
         welcome={villageHeadWelcome} 
         logoUrl={headerSettings?.logoUrl || undefined}
-      />
+      />}
 
       {/* Employee Slider Section */}
-      <EmployeeSlider employees={employees} />
+      {sections?.employees && <EmployeeSlider employees={employees} />}
 
       {/* Population Demographics */}
-          <PopulationDemographics />
+          {sections?.population && <PopulationDemographics />}
 
           {/* APB Desa Section */}
-          <ApbDesaSection />
+          {sections?.apb && <ApbDesaSection />}
 
           {/* Berita List */}
-          <BeritaList />
+          {sections?.news && <BeritaList />}
 
       {/* Village Maps Section */}
-      <VillageMaps />
+      {sections?.maps && <VillageMaps />}
 
       {/* Helpdesk Section */}
-      <HelpdeskForm />
+      {sections?.helpdesk && <HelpdeskForm />}
 
       {/* Gallery Preview Section */}
-      <GalleryPreview />
+      {sections?.gallery && <GalleryPreview />}
 
     
 

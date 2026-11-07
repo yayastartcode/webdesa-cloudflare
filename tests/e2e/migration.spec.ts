@@ -1,3 +1,4 @@
+import { defaultHomeSections, homeSectionOptions } from '../../src/lib/home-sections';
 import { request as httpRequest } from 'node:http';
 import { test, expect, request, type Page, type Locator, type APIRequestContext } from '@playwright/test';
 
@@ -45,7 +46,9 @@ test.describe.serial('Cloudflare migration', () => {
 
   test('anonymous permissions, setup and Better Auth sessions', async () => {
     for (const path of ['/api/posts?admin=true', '/api/helpdesk', '/api/helpdesk/123', '/api/info/manage/123', '/api/apb-desa?admin=true']) expect((await api.get(path)).status(), path).toBe(403);
-    for (const path of ['/api/posts', '/api/gallery', '/api/info', '/api/employees', '/api/hero-slides', '/api/header-settings', '/api/population-data', '/api/village-info', '/api/village-head-welcome', '/api/apb-desa', '/api/uploads']) expect((await api.post(path, { data: {} })).status(), path).toBe(403);
+    expect((await api.put('/api/homepage-settings', { data: { sections: defaultHomeSections } })).status()).toBe(403);
+    expect((await api.get('/api/homepage-settings')).ok()).toBe(true);
+    for (const path of ['/api/posts', '/api/gallery', '/api/info', '/api/employees', '/api/hero-slides', '/api/header-settings', '/api/population-data', '/api/village-info', '/api/village-head-welcome', '/api/apb-desa', '/api/homepage-settings', '/api/uploads']) expect((await api.post(path, { data: {} })).status(), path).toBe(403);
     expect((await api.post('/api/admin/create', { data: { ...credentials, name: 'Administrator' } })).status()).toBe(403);
     const setup = await api.post('/api/admin/create', { headers: { 'X-Setup-Token': 'local-test-setup-token-only' }, data: { ...credentials, name: 'Administrator' } });
     expect(await setup.text()).toContain('Admin berhasil dibuat');
@@ -164,7 +167,7 @@ test.describe.serial('Cloudflare migration', () => {
     const login = await signedIn;
     expect(login.status(), await login.text()).toBe(200);
     await expect(page).toHaveURL(/\/dashboard$/);
-    for (const route of ['posts','header-settings','hero-slides','village-info','village-head-welcome','employees','population-data','gallery','helpdesk','info','apb-desa','village-contact']) {
+    for (const route of ['posts','header-settings','hero-slides','village-info','village-head-welcome','employees','population-data','gallery','helpdesk','info','apb-desa','village-contact','homepage-settings']) {
       await page.goto(`/dashboard/${route}`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('h1').first(), route).toBeVisible();
       await expect(page).toHaveURL(new RegExp(`/dashboard/${route}$`));
@@ -454,6 +457,59 @@ test.describe.serial('Cloudflare migration', () => {
     await visitHome();
     for (const name of sectionNames) await expect(page.getByRole('heading', { name })).toHaveCount(0);
     await expect(page.locator('body')).not.toContainText(/Service unavailable|Gagal memuat|Terjadi kesalahan|Data APB Desa tidak tersedia/);
+  });
+
+  test('homepage checklists persist, protect essential sections, and retain content', async ({ page }) => {
+    const defaults = (await (await api.get('/api/homepage-settings')).json()).data.sections;
+    expect(defaults).toEqual(defaultHomeSections);
+    for (const data of [
+      { sections: { ...defaults, hero: false } }, { sections: { ...defaults, header: false } },
+      { sections: { ...defaults, footer: false } }, { sections: { ...defaults, apb: 'false' } }, { sections: { apb: false } },
+    ]) expect((await api.put('/api/homepage-settings', { data })).status()).toBe(400);
+    await page.context().addCookies((await api.storageState()).cookies);
+    await page.route('https://www.google.com/maps/**', route => route.fulfill({ contentType: 'text/html', body: '<html><body>Map</body></html>' }));
+    await page.goto('/dashboard/homepage-settings', { waitUntil: 'domcontentloaded' });
+    for (const name of ['Header & navigasi', 'Hero utama', 'Footer']) {
+      await expect(page.getByRole('checkbox', { name, exact: true })).toBeChecked();
+      await expect(page.getByRole('checkbox', { name, exact: true })).toBeDisabled();
+    }
+    for (const option of homeSectionOptions) {
+      const checkbox = page.getByRole('checkbox', { name: `Tampilkan ${option.label}`, exact: true });
+      await expect(checkbox).toBeEnabled(); await expect(checkbox).toBeChecked(); await checkbox.uncheck();
+    }
+    await expect(page.getByText('Perubahan belum disimpan', { exact: true })).toBeVisible();
+    const off = Object.fromEntries(homeSectionOptions.map(option => [option.key, false]));
+    expect((await saveImageForm(page, '/api/homepage-settings', 'PUT', page.getByRole('button', { name: 'Simpan Tampilan', exact: true }))).data.sections).toEqual(off);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    for (const option of homeSectionOptions) await expect(page.getByRole('checkbox', { name: `Tampilkan ${option.label}`, exact: true })).not.toBeChecked();
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+    await expect(page.locator('header')).toBeVisible(); await expect(page.getByRole('contentinfo')).toBeVisible();
+    await expect(page.locator('section')).toHaveCount(0);
+    await page.goto('/contact', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText('Jalan Pelayanan 123', { exact: true })).toBeVisible();
+    await page.goto('/dashboard/homepage-settings', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('checkbox', { name: 'Tampilkan APB Desa', exact: true })).toBeEnabled();
+    await page.getByRole('button', { name: 'Pulihkan bawaan', exact: true }).click();
+    expect((await saveImageForm(page, '/api/homepage-settings', 'PUT', page.getByRole('button', { name: 'Simpan Tampilan', exact: true }))).data.sections).toEqual(defaultHomeSections);
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: 'Visi, Misi & Tujuan Desa', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^APB DESA/ })).toBeVisible();
+    await page.goto('/dashboard/homepage-settings', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('checkbox', { name: 'Tampilkan APB Desa', exact: true }).uncheck();
+    await page.route('**/api/homepage-settings', route => route.request().method() === 'PUT' ? route.fulfill({ status: 500, json: { error: 'Simpan gagal, coba lagi.' } }) : route.continue());
+    await page.getByRole('button', { name: 'Simpan Tampilan', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('Simpan gagal');
+    expect((await (await api.get('/api/homepage-settings')).json()).data.sections.apb).toBe(true);
+    await page.unroute('**/api/homepage-settings');
+    await page.route('**/api/homepage-settings', route => route.fulfill({ status: 503, json: { error: 'Pengaturan belum dapat dimuat.' } }));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('alert')).toContainText('belum dapat dimuat');
+    await expect(page.getByRole('button', { name: 'Simpan Tampilan', exact: true })).toBeDisabled();
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
+    await expect(page.locator('section')).toHaveCount(0);
+    await page.unroute('**/api/homepage-settings');
   });
 
 });

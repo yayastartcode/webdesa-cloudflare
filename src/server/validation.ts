@@ -7,6 +7,10 @@ const imageUrl = z.string().max(4000).refine(value => !value || value.startsWith
 const order = z.number().int().min(0).max(10000);
 const numericString = z.union([z.string().regex(/^\d{1,13}(\.\d{1,2})?$/), z.number().finite().nonnegative().max(9999999999999.99)]).transform(String);
 export const bodies = {
+  'homepage-settings': z.object({ sections: z.object({
+    villageInfo: z.boolean(), villageHeadWelcome: z.boolean(), employees: z.boolean(), population: z.boolean(),
+    apb: z.boolean(), news: z.boolean(), maps: z.boolean(), helpdesk: z.boolean(), gallery: z.boolean(),
+  }).strict() }).strict(),
   'village-contact': z.object({
     officeName: z.string().trim().min(1).max(200), address: z.string().trim().min(1).max(1000),
     openingHours: z.string().max(500), phone: z.string().max(40).regex(/^\+?[\d\s().-]*$/),

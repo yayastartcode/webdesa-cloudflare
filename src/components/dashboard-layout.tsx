@@ -2,12 +2,13 @@ import { useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, ExternalLink, FileText, Image, Images, LayoutDashboard,
-  LogOut, MapPin, Megaphone, Menu, MessageSquare, Navigation, Newspaper, Target, Users, Wallet, X,
+  LogOut, LayoutTemplate, MapPin, Megaphone, Menu, MessageSquare, Navigation, Newspaper, Target, Users, Wallet, X,
 } from 'lucide-react';
 import { signOut, useSession } from '@/lib/auth-client';
 
 const sections = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/dashboard/homepage-settings', label: 'Tampilan Beranda', icon: LayoutTemplate },
   { path: '/dashboard/posts', label: 'Berita Desa', icon: Newspaper },
   { path: '/dashboard/header-settings', label: 'Header & Navigasi', icon: Navigation },
   { path: '/dashboard/hero-slides', label: 'Hero Slider', icon: Images },

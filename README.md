@@ -48,6 +48,12 @@ Menu Peta & Kontak mengatur nama kantor, alamat, jam layanan, telepon, WhatsApp,
 
 APB Desa, statistik penduduk, pegawai, berita, dan galeri di beranda tampil setelah data tersedia. Data kosong, permintaan yang gagal, dan proses pemuatan tidak menampilkan banner atau bagian kosong. Nilai tersimpan sebesar 0 tetap ditampilkan. Statistik tidak memakai angka contoh. Foto hero yang belum diisi memakai latar gradasi. Kartu kontak dan jam layanan yang kosong disembunyikan; form pengaduan tampil setelah kunci reCAPTCHA frontend dikonfigurasi. Pesan pengelolaan data di dashboard dan keadaan kosong pada halaman daftar tetap tersedia.
 
+## Tampilkan atau sembunyikan section
+
+Menu **Tampilan Beranda** (`/dashboard/homepage-settings`) menyediakan checklist untuk sembilan section: visi/misi/tujuan, sambutan kepala desa, pegawai, statistik penduduk, APB, berita, peta/kontak, pengaduan, dan galeri. Semua diaktifkan secara bawaan. Header/navigasi, hero utama, serta footer selalu tampil dan tidak dapat dinonaktifkan melalui API. Pengaturan hanya berlaku di beranda; konten dan halaman tersendiri tetap tersedia. Section yang membutuhkan data tetap mengikuti aturan data kosong di atas.
+
+Perubahan harus disimpan dengan **Simpan Tampilan**. **Pulihkan bawaan** mencentang semua section, lalu simpan untuk menerapkan. Pengaturan tersimpan di D1 dan berlaku untuk seluruh pengunjung. Jalankan migrasi D1 terbaru sebelum menggunakan fitur ini. Jika pengaturan gagal dimuat, beranda tetap menampilkan bagian utama dan menunggu pengaturan tersedia untuk menampilkan section lainnya.
+
 ## Validasi
 
 ```sh

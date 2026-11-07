@@ -1,3 +1,4 @@
+import type { HomeSections } from '../../lib/home-sections';
 import { sqliteTable, text, integer, customType, uniqueIndex } from 'drizzle-orm/sqlite-core';
 
 // Store APB amounts as exact integer rupiah cents, expose numbers to the existing UI.
@@ -179,5 +180,11 @@ export const villageContact = sqliteTable('village_contact', {
   email: text('email').notNull().default(''),
   mapEmbedUrl: text('mapEmbedUrl').notNull().default(''),
   mapLink: text('mapLink').notNull().default(''),
+  ...timestamps(),
+});
+
+export const homepageSettings = sqliteTable('homepage_settings', {
+  id: text('id').primaryKey(),
+  sections: text('sections', { mode: 'json' }).$type<HomeSections>().notNull(),
   ...timestamps(),
 });
