@@ -1,6 +1,6 @@
 import type { RouteContext } from "../../../context";
 
-export function createHandlers({ store }: RouteContext) {
+export function createHandlers({ store, session }: RouteContext) {
 
 async function GET(
   request: Request,
@@ -13,7 +13,7 @@ async function GET(
       where: { slug },
     });
 
-    if (!info) {
+    if (!info || (!info.isActive && session?.user.role !== 'ADMIN')) {
       return Response.json(
         { success: false, error: "Halaman info tidak ditemukan" },
         { status: 404 }

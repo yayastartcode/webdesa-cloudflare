@@ -6,12 +6,12 @@ export function createHandlers({ store }: RouteContext) {
 async function POST(request: Request) {
   try {
     const body = await readBody(request, "info");
-    const { title, slug, pdfUrl } = body;
+    const { title, slug, pdfUrl, imageUrl, description, isActive } = body;
 
     // Validate required fields
-    if (!title || !slug || !pdfUrl) {
+    if (!title || !slug || Number(!!pdfUrl) + Number(!!imageUrl) !== 1) {
       return Response.json(
-        { error: "Title, slug, dan PDF URL wajib diisi" },
+        { error: "Isi judul, link halaman, dan pilih satu lampiran PDF atau gambar" },
         { status: 400 }
       );
     }
@@ -33,7 +33,10 @@ async function POST(request: Request) {
       data: {
         title,
         slug,
-        pdfUrl,
+        pdfUrl: pdfUrl || '',
+        imageUrl: imageUrl || null,
+        description: description || null,
+        isActive: isActive ?? true,
       },
     });
 
@@ -56,12 +59,14 @@ async function GET(request: Request) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const isActive = searchParams.get("isActive");
+    const admin = searchParams.get("admin") === "true";
 
     // Build where clause
     const where: {
       isActive?: boolean;
     } = {};
-    if (isActive !== null) {
+    if (!admin) where.isActive = true;
+    if (admin && isActive !== null) {
       where.isActive = isActive === "true";
     }
 

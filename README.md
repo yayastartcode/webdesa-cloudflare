@@ -36,6 +36,12 @@ Untuk HMR, jalankan `npm run preview` pada terminal pertama dan `npm run dev` pa
 
 Form berita, foto pegawai, logo, galeri, hero slide (baru dan lama), serta gambar di dalam editor berita/sambutan menyediakan upload langsung dengan pratinjau. Format JPG, PNG, WebP, dan GIF maksimal 4 MB. File baru disimpan di R2 dan konten memakai URL file, bukan data base64. Form tidak dapat disimpan selama upload berlangsung. URL gambar lama tetap dapat digunakan melalui pilihan “Gunakan URL gambar”.
 
+## Halaman Info dan Peta & Kontak
+
+Menu Halaman Info menyediakan judul, keterangan singkat maksimal 500 karakter, link halaman, status tampil, serta satu lampiran PDF (maksimal 16 MB) atau gambar (maksimal 4 MB). PDF lama tetap dapat dibuka dan diedit.
+
+Menu Peta & Kontak mengatur nama kantor, alamat, jam layanan, telepon, WhatsApp, email, sematan Google Maps, dan tautan peta. Perubahan ditampilkan di beranda dan `/contact`. Sematan menerima URL Google Maps atau kode iframe dari fitur Bagikan → Sematkan peta. Jalankan migrasi D1 terbaru sebelum memakai fitur ini.
+
 ## Validasi
 
 ```sh

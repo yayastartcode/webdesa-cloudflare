@@ -135,6 +135,8 @@ export const info = sqliteTable('info', {
   title: text('title').notNull(),
   slug: text('slug').notNull().unique(),
   pdfUrl: text('pdfUrl').notNull(),
+  imageUrl: text('imageUrl'),
+  description: text('description'),
   isActive: integer('isActive', { mode: 'boolean' }).notNull().default(true),
   ...timestamps(),
 });
@@ -164,4 +166,18 @@ export const rateLimit = sqliteTable('rate_limit', {
   key: text('key').notNull().unique(),
   count: integer('count').notNull(),
   lastRequest: integer('lastRequest').notNull(),
+});
+
+
+export const villageContact = sqliteTable('village_contact', {
+  id: text('id').primaryKey(),
+  officeName: text('officeName').notNull(),
+  address: text('address').notNull(),
+  openingHours: text('openingHours').notNull(),
+  phone: text('phone').notNull().default(''),
+  whatsapp: text('whatsapp').notNull().default(''),
+  email: text('email').notNull().default(''),
+  mapEmbedUrl: text('mapEmbedUrl').notNull().default(''),
+  mapLink: text('mapLink').notNull().default(''),
+  ...timestamps(),
 });

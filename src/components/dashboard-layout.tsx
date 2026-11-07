@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, ChevronRight, ExternalLink, FileText, Image, Images, LayoutDashboard,
-  LogOut, Megaphone, Menu, MessageSquare, Navigation, Newspaper, Target, Users, Wallet, X,
+  LogOut, MapPin, Megaphone, Menu, MessageSquare, Navigation, Newspaper, Target, Users, Wallet, X,
 } from 'lucide-react';
 import { signOut, useSession } from '@/lib/auth-client';
 
@@ -18,6 +18,7 @@ const sections = [
   { path: '/dashboard/helpdesk', label: 'Pengaduan Warga', icon: MessageSquare },
   { path: '/dashboard/info', label: 'Halaman Info', icon: FileText },
   { path: '/dashboard/gallery', label: 'Galeri Kegiatan', icon: Image },
+  { path: '/dashboard/village-contact', label: 'Peta & Kontak', icon: MapPin },
   { path: '/dashboard/apb-desa', label: 'APB Desa', icon: Wallet },
 ];
 

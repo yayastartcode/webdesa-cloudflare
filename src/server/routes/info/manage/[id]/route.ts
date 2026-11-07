@@ -51,7 +51,7 @@ async function PATCH(
     }
 
     const { id } = await params;
-    const { title, slug, pdfUrl, isActive } = await readBody(request, "info-update");
+    const { title, slug, pdfUrl, imageUrl, description, isActive } = await readBody(request, "info-update");
 
     // Check if info exists
     const existingInfo = await store.info.findUnique({
@@ -63,6 +63,12 @@ async function PATCH(
         { success: false, error: 'Halaman info tidak ditemukan' },
         { status: 404 }
       );
+    }
+
+    const nextPdf = pdfUrl !== undefined ? pdfUrl : existingInfo.pdfUrl;
+    const nextImage = imageUrl !== undefined ? imageUrl : existingInfo.imageUrl;
+    if (Number(!!nextPdf) + Number(!!nextImage) !== 1) {
+      return Response.json({ error: 'Pilih satu lampiran PDF atau gambar' }, { status: 400 });
     }
 
     // Check if slug is being changed and if it already exists
@@ -85,6 +91,8 @@ async function PATCH(
       title?: string;
       slug?: string;
       pdfUrl?: string;
+      imageUrl?: string | null;
+      description?: string | null;
       isActive?: boolean;
     } = {
       updatedAt: new Date()
@@ -92,7 +100,9 @@ async function PATCH(
 
     if (title !== undefined) updateData.title = title;
     if (slug !== undefined) updateData.slug = slug;
-    if (pdfUrl !== undefined) updateData.pdfUrl = pdfUrl;
+    if (pdfUrl !== undefined) updateData.pdfUrl = pdfUrl || '';
+    if (imageUrl !== undefined) updateData.imageUrl = imageUrl || null;
+    if (description !== undefined) updateData.description = description || null;
     if (isActive !== undefined) updateData.isActive = isActive;
 
     const updatedInfo = await store.info.update({

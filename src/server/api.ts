@@ -1,3 +1,4 @@
+import { createHandlers as villageContactHandlers } from './routes/village-contact/route';
 import { ZodError } from 'zod';
 import { readBody, allBodies } from './validation';
 import { createDb, createStore } from './db/store';
@@ -28,6 +29,7 @@ import { createHandlers as route20 } from './routes/village-info/route';
 
 type Handler = (request: Request, context: { params: Promise<{ id: string; slug: string }> }) => Promise<Response>;
 const routes = [
+  { path: '/api/village-contact', create: villageContactHandlers },
   { path: '/api/admin/check', create: route0 },
   { path: '/api/apb-desa', create: route3 },
   { path: '/api/employees', create: route5 },

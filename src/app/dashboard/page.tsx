@@ -232,6 +232,8 @@ export default function DashboardPage() {
                 >
                   Kelola Halaman Info
                 </Button>
+                <Button variant="outline" className="w-full text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
+                  onClick={() => window.location.href = '/dashboard/village-contact'}>Kelola Peta & Kontak</Button>
                 <Button 
                   variant="outline" 
                   className="w-full text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"

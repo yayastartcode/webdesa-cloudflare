@@ -25,6 +25,8 @@ interface Info {
   title: string;
   slug: string;
   pdfUrl: string;
+  imageUrl?: string | null;
+  description?: string | null;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -41,6 +43,7 @@ export default function InfoPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError('');
       
       // Fetch info data
       const infoResponse = await fetch(`/api/info/${params.slug}`);
@@ -237,6 +240,7 @@ export default function InfoPage() {
       <div className="bg-white shadow-sm pt-16">
         <div className="container mx-auto px-4 py-6">
           <h1 className="text-3xl font-bold text-gray-900">{info.title}</h1>
+          {info.description && <p className="mt-3 max-w-3xl whitespace-pre-line text-gray-600">{info.description}</p>}
           <p className="text-gray-600 mt-2">
             Dipublikasikan pada {new Date(info.createdAt).toLocaleDateString('id-ID', {
               year: 'numeric',
@@ -249,6 +253,11 @@ export default function InfoPage() {
 
       {/* PDF Viewer */}
       <div className="container mx-auto px-4 py-6">
+        {info.imageUrl ? (
+          <div className="overflow-hidden rounded-lg border bg-white p-2 shadow-sm sm:p-4">
+            <img src={info.imageUrl} alt={info.title} className="mx-auto h-auto max-w-full rounded object-contain" />
+          </div>
+        ) : (
         <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
           <div className="p-4 border-b bg-gray-50">
             <div className="flex items-center justify-between">
@@ -298,6 +307,8 @@ export default function InfoPage() {
           </noscript>
         </div>
         
+        )}
+
         {/* Back to Home */}
         <div className="mt-6 text-center">
           <Link

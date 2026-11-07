@@ -27,12 +27,14 @@ async function saveImageForm(page: Page, path: string, method: string, button: L
   let lookup = path;
   if (method === 'POST' && path === '/api/posts') lookup += '?admin=true&limit=100';
   if (method === 'POST' && path === '/api/gallery') lookup += '?limit=100';
+  if (method === 'POST' && path === '/api/info') lookup += '?admin=true&limit=100';
   const persisted = await api.get(lookup);
   expect(persisted.ok()).toBe(true);
   const value = await persisted.json();
   if (method === 'POST' && (path === '/api/posts' || path === '/api/employees')) {
     return { data: value.data.find((row: { title?: string; name?: string }) => path === '/api/posts' ? row.title === payload.title : row.name === payload.name) };
   }
+  if (method === 'POST' && path === '/api/info') return { info: value.infos.find((row: { title: string }) => row.title === payload.title) };
   if (method === 'POST' && path === '/api/gallery') return { gallery: value.galleries.find((row: { title: string }) => row.title === payload.title) };
   if (method === 'POST' && path === '/api/hero-slides') return value.find((row: { title: string }) => row.title === payload.title);
   return value;
@@ -162,7 +164,7 @@ test.describe.serial('Cloudflare migration', () => {
     const login = await signedIn;
     expect(login.status(), await login.text()).toBe(200);
     await expect(page).toHaveURL(/\/dashboard$/);
-    for (const route of ['posts','header-settings','hero-slides','village-info','village-head-welcome','employees','population-data','gallery','helpdesk','info','apb-desa']) {
+    for (const route of ['posts','header-settings','hero-slides','village-info','village-head-welcome','employees','population-data','gallery','helpdesk','info','apb-desa','village-contact']) {
       await page.goto(`/dashboard/${route}`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('h1').first(), route).toBeVisible();
       await expect(page).toHaveURL(new RegExp(`/dashboard/${route}$`));
@@ -303,6 +305,84 @@ test.describe.serial('Cloudflare migration', () => {
     await expect(page.locator('textarea')).toHaveValue(new RegExp(welcomeImage));
     const welcome = await saveImageForm(page, '/api/village-head-welcome', 'POST', page.getByRole('button', { name: 'Simpan', exact: true }));
     expect(welcome.data.content).toContain(`![Gambar sambutan](${welcomeImage})`);
+  });
+
+  test('info attachments and map settings validate and enforce admin permissions', async () => {
+    const visitor = await request.newContext({ baseURL: origin, extraHTTPHeaders: { Origin: origin } });
+    try {
+      const fields = { title: 'Info validasi', slug: 'info-validasi' };
+      expect((await api.post('/api/info', { data: fields })).status()).toBe(400);
+      expect((await api.post('/api/info', { data: { ...fields, imageUrl: image, pdfUrl: 'https://example.com/file.pdf' } })).status()).toBe(400);
+      const defaults = (await (await api.get('/api/village-contact')).json()).data;
+      expect((await visitor.put('/api/village-contact', { data: defaults })).status()).toBe(403);
+      expect((await api.put('/api/village-contact', { data: { ...defaults, mapEmbedUrl: 'https://evil.example/iframe' } })).status()).toBe(400);
+      expect((await api.put('/api/village-contact', { data: { ...defaults, mapEmbedUrl: 'javascript:alert(1)' } })).status()).toBe(400);
+      const saved = await api.post('/api/info', { data: { ...fields, imageUrl: image, description: 'Keterangan gambar', isActive: false } });
+      const info = (await saved.json()).info;
+      expect(saved.ok()).toBe(true);
+      expect((await visitor.get('/api/info/info-validasi')).status()).toBe(404);
+      expect((await api.patch(`/api/info/manage/${info.id}`, { data: { isActive: true } })).ok()).toBe(true);
+      expect((await (await visitor.get('/api/info/info-validasi')).json()).data.description).toBe('Keterangan gambar');
+      await api.delete(`/api/info/manage/${info.id}`);
+    } finally { await visitor.dispose(); }
+  });
+
+  test('info form supports images, short descriptions and switching an existing item to PDF', async ({ page }) => {
+    await page.context().addCookies((await api.storageState()).cookies);
+    await page.route('https://example.com/**', route => route.fulfill({ body: '' }));
+    await page.goto('/dashboard/info', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'Tambah Halaman Info', exact: true }).click();
+    await page.getByLabel('Judul', { exact: true }).fill('Poster layanan');
+    await expect(page.getByLabel('Link halaman', { exact: true })).toHaveValue('poster-layanan');
+    await page.getByLabel('Keterangan singkat (opsional)', { exact: true }).fill('Jadwal pelayanan untuk warga desa.');
+    await page.getByRole('radio', { name: 'Gambar', exact: true }).check();
+    const photo = await uploadImage(page, 'Gambar info');
+    const info = (await saveImageForm(page, '/api/info', 'POST', page.getByRole('button', { name: 'Simpan Info', exact: true }))).info;
+    expect(info.imageUrl).toBe(photo); expect(info.pdfUrl).toBe(''); expect(info.description).toBe('Jadwal pelayanan untuk warga desa.');
+    await page.goto('/info/poster-layanan', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: 'Poster layanan', exact: true })).toBeVisible();
+    await expect(page.getByText('Jadwal pelayanan untuk warga desa.', { exact: true })).toBeVisible();
+    await expect(page.getByRole('img', { name: 'Poster layanan', exact: true })).toHaveAttribute('src', photo);
+    await page.goto('/dashboard/info', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'Edit info Poster layanan', exact: true }).click();
+    await page.getByLabel('Judul', { exact: true }).fill('Poster layanan diperbarui');
+    await expect(page.getByLabel('Link halaman', { exact: true })).toHaveValue('poster-layanan');
+    await page.getByRole('radio', { name: 'PDF', exact: true }).check();
+    const upload = page.waitForResponse(r => r.url().endsWith('/api/uploads?type=pdf'));
+    await page.getByLabel('Upload PDF info', { exact: true }).setInputFiles({ name: 'jadwal.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7\n%%EOF') });
+    const pdf = (await (await upload).json()).url;
+    const updated = (await saveImageForm(page, `/api/info/manage/${info.id}`, 'PATCH', page.getByRole('button', { name: 'Simpan Info', exact: true }))).data;
+    expect(updated.pdfUrl).toBe(pdf); expect(updated.imageUrl).toBeNull(); expect(updated.slug).toBe('poster-layanan');
+    await page.goto('/info/poster-layanan', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('link', { name: 'Unduh PDF', exact: true }).first()).toHaveAttribute('href', pdf);
+    await expect(page.locator('iframe')).toHaveAttribute('src', `${pdf}#toolbar=1&navpanes=1&scrollbar=1`);
+  });
+
+  test('map and contact settings persist and appear on the public site', async ({ page }) => {
+    await page.context().addCookies((await api.storageState()).cookies);
+    await page.route('https://www.google.com/maps/**', route => route.fulfill({ contentType: 'text/html', body: '<html><body>Map preview</body></html>' }));
+    await page.goto('/dashboard/village-contact', { waitUntil: 'domcontentloaded' });
+    await page.getByLabel('Nama kantor', { exact: true }).fill('Kantor Desa Pengujian');
+    await page.getByLabel('Alamat', { exact: true }).fill('Jalan Pelayanan 123');
+    await page.getByLabel('Jam layanan', { exact: true }).fill('Senin - Jumat, 08.00 - 15.00');
+    await page.getByLabel('Nomor telepon (opsional)', { exact: true }).fill('+62 812 3456 7890');
+    await page.getByLabel('WhatsApp (opsional)', { exact: true }).fill('6281234567890');
+    await page.getByLabel('Email (opsional)', { exact: true }).fill('layanan@example.test');
+    const embed = 'https://www.google.com/maps/embed?pb=test-location';
+    await page.getByLabel('Sematan Google Maps', { exact: true }).fill(`<iframe src="${embed}" width="600" height="450"></iframe>`);
+    await page.getByLabel('Tautan Google Maps (opsional)', { exact: true }).fill('https://maps.app.goo.gl/example');
+    const result = await saveImageForm(page, '/api/village-contact', 'PUT', page.getByRole('button', { name: 'Simpan Peta & Kontak', exact: true }));
+    expect(result.data.mapEmbedUrl).toBe(embed);
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByLabel('Nama kantor', { exact: true })).toHaveValue('Kantor Desa Pengujian');
+    await page.goto('/contact', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: 'Kontak & Lokasi', exact: true })).toBeVisible();
+    await expect(page.getByText('Jalan Pelayanan 123', { exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Hubungi via WhatsApp', exact: true })).toHaveAttribute('href', 'https://wa.me/6281234567890');
+    await expect(page.getByRole('link', { name: 'layanan@example.test', exact: true })).toHaveAttribute('href', 'mailto:layanan@example.test');
+    await expect(page.getByTitle('Peta lokasi kantor desa')).toHaveAttribute('src', embed);
+    await page.goto('/', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText('Jalan Pelayanan 123', { exact: true })).toBeVisible();
   });
 
 });

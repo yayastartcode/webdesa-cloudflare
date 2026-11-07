@@ -6,6 +6,8 @@ import { DashboardLayout } from './components/dashboard-layout';
 import '@fontsource/geist/latin.css';
 import '@fontsource/geist-mono/latin.css';
 import './app/globals.css';
+const ContactPage = lazy(() => import('./app/contact/page'));
+const ContactSettingsPage = lazy(() => import('./app/dashboard/village-contact/page'));
 const Page0 = lazy(() => import('./app/berita/[id]/page'));
 const Page1 = lazy(() => import('./app/berita/page'));
 const Page2 = lazy(() => import('./app/dashboard/apb-desa/page'));
@@ -35,9 +37,12 @@ function Admin({ children }: { children: React.ReactNode }) {
 }
 createRoot(document.getElementById('root')!).render(
   <BrowserRouter><Suspense fallback={<p className="p-8">Memuat...</p>}><Routes>
+    <Route path="/contact" element={<ContactPage />} />
+    <Route path="/kontak" element={<Navigate to="/contact" replace />} />
     <Route path="/berita/:id" element={<Page0 />} />
     <Route path="/berita" element={<Page1 />} />
     <Route path="/dashboard" element={<Admin><DashboardLayout /></Admin>}>
+      <Route path="village-contact" element={<ContactSettingsPage />} />
       <Route path="apb-desa" element={<Page2 />} />
       <Route path="employees" element={<Page3 />} />
       <Route path="gallery" element={<Page4 />} />

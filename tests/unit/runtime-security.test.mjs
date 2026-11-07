@@ -18,9 +18,12 @@ it('imports a PostgreSQL snapshot into D1 and signs in with its original bcrypt 
   const snapshot = Object.fromEntries(Object.keys(legacyTables).map(table => [table, []]));
   const date = '2025-07-22T00:00:00.000Z';
   snapshot.users = [{ id: 'original-admin-id', name: "O'Connor", email: 'admin@example.test', emailVerified: null, image: null, password: await hash('admin123', 12), role: 'ADMIN', createdAt: date, updatedAt: date }];
+  snapshot.info = [{ id: 'legacy-info-id', title: 'PDF lama', slug: 'pdf-lama', pdfUrl: 'https://example.com/legacy.pdf', isActive: true, createdAt: date, updatedAt: date }];
   snapshot.apb_desa = [{ id: 'original-budget', year: 2025, pendapatanDesa: '9999999999999.99', belanjaDesa: '123456789.12', isActive: true, createdAt: date, updatedAt: date }];
   const db = await runtime.getD1Database('DB');
   for (const statement of convertSnapshot(snapshot).split('\n').filter(line => !line.startsWith('--') && line.trim())) await db.prepare(statement).run();
+  const oldInfo = await db.prepare('SELECT pdfUrl, imageUrl, description FROM info').first();
+  expect(oldInfo.pdfUrl).toBe('https://example.com/legacy.pdf'); expect(oldInfo.imageUrl).toBeNull(); expect(oldInfo.description).toBeNull();
   const budget = await db.prepare('SELECT pendapatanDesa FROM apb_desa').first();
   expect(budget.pendapatanDesa).toBe(999999999999999);
   const login = await runtime.dispatchFetch('http://localhost:8799/api/auth/sign-in/email', {
