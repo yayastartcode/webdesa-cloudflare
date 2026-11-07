@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Save, Users } from "lucide-react";
+import { Save, Users } from "lucide-react";
 
 interface PopulationData {
   id?: string;
@@ -147,15 +147,7 @@ export default function PopulationDataPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push('/dashboard')}
-                className="flex items-center space-x-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span>Kembali</span>
-              </Button>
+
               <div className="flex items-center space-x-2">
                 <Users className="h-6 w-6 text-orange-600" />
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -168,7 +160,7 @@ export default function PopulationDataPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
+      <section className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           {message && (
             <Alert className={`mb-6 ${message.type === 'error' ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'}`}>
@@ -294,7 +286,7 @@ export default function PopulationDataPage() {
             </CardContent>
           </Card>
         </div>
-      </main>
+      </section>
     </div>
   );
 }

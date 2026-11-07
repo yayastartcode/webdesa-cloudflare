@@ -134,6 +134,13 @@ test.describe.serial('Cloudflare migration', () => {
       await page.goto(`/dashboard/${route}`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('h1').first(), route).toBeVisible();
       await expect(page).toHaveURL(new RegExp(`/dashboard/${route}$`));
+      const back = page.getByRole('link', { name: 'Kembali ke Dashboard', exact: true });
+      await expect(back).toHaveCount(1);
+      await expect(back).toHaveAttribute('href', '/dashboard');
+      await expect(page.getByRole('navigation', { name: 'Navigasi admin', exact: true }).locator('[aria-current="page"]')).toHaveAttribute('href', `/dashboard/${route}`);
+      await back.click();
+      await expect(page).toHaveURL(/\/dashboard$/);
+
     }
     await page.goto('/dashboard/posts', { waitUntil: 'domcontentloaded' });
     await page.getByRole('button', { name: 'Tambah Berita', exact: true }).click();
@@ -153,6 +160,29 @@ test.describe.serial('Cloudflare migration', () => {
     await expect(page.getByRole('button', { name: 'Simpan Perubahan', exact: true })).toHaveCount(0);
     await page.goto('/berita', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Draft dari editor Tiptap').first()).toBeVisible();
+    await page.goto('/dashboard/gallery', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('navigation', { name: 'Navigasi admin', exact: true }).getByRole('link', { name: 'Pengaduan Warga', exact: true }).click();
+    await expect(page).toHaveURL(/\/dashboard\/helpdesk$/);
+    await expect(page.getByRole('navigation', { name: 'Navigasi admin', exact: true }).locator('[aria-current="page"]')).toHaveAttribute('href', '/dashboard/helpdesk');
+    await page.screenshot({ path: 'work/nav-desktop.png', fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    const mobileButton = page.getByRole('button', { name: 'Buka menu admin', exact: true });
+    await expect(mobileButton).toBeVisible();
+    await mobileButton.click();
+    const mobileNav = page.getByRole('navigation', { name: 'Navigasi admin seluler', exact: true });
+    await expect(mobileNav).toBeVisible();
+    await page.screenshot({ path: 'work/nav-mobile.png', fullPage: true });
+    await mobileNav.getByRole('link', { name: 'APB Desa', exact: true }).click();
+    await expect(page).toHaveURL(/\/dashboard\/apb-desa$/);
+    await expect(mobileNav).toHaveCount(0);
+    await expect(mobileButton).toHaveAttribute('aria-expanded', 'false');
+    await page.getByRole('link', { name: 'Kembali ke Dashboard', exact: true }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await mobileButton.click();
+    await page.keyboard.press('Escape');
+    await expect(mobileNav).toHaveCount(0);
+    await expect(mobileButton).toBeFocused();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     expect(errors).toEqual([]);
   });
 });

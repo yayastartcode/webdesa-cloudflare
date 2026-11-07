@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "@/lib/navigation";
 import { lazy } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save, Eye } from "lucide-react";
+import { Save, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Dynamically import the markdown editor to avoid SSR issues
@@ -23,7 +22,6 @@ interface VillageHeadWelcome {
 }
 
 export default function VillageHeadWelcomePage() {
-  const router = useRouter();
   const { toast } = useToast();
   const [welcome, setWelcome] = useState<VillageHeadWelcome>({ content: "" });
   const [content, setContent] = useState("");
@@ -116,15 +114,7 @@ export default function VillageHeadWelcomePage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/dashboard")}
-              className="flex items-center space-x-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Kembali ke Dashboard</span>
-            </Button>
+
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Kelola Sambutan Kepala Desa

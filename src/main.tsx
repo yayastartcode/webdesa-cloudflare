@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useSession } from './lib/auth-client';
+import { DashboardLayout } from './components/dashboard-layout';
 import '@fontsource/geist/latin.css';
 import '@fontsource/geist-mono/latin.css';
 import './app/globals.css';
@@ -36,18 +37,20 @@ createRoot(document.getElementById('root')!).render(
   <BrowserRouter><Suspense fallback={<p className="p-8">Memuat...</p>}><Routes>
     <Route path="/berita/:id" element={<Page0 />} />
     <Route path="/berita" element={<Page1 />} />
-    <Route path="/dashboard/apb-desa" element={<Admin><Page2 /></Admin>} />
-    <Route path="/dashboard/employees" element={<Admin><Page3 /></Admin>} />
-    <Route path="/dashboard/gallery" element={<Admin><Page4 /></Admin>} />
-    <Route path="/dashboard/header-settings" element={<Admin><Page5 /></Admin>} />
-    <Route path="/dashboard/helpdesk" element={<Admin><Page6 /></Admin>} />
-    <Route path="/dashboard/hero-slides" element={<Admin><Page7 /></Admin>} />
-    <Route path="/dashboard/info" element={<Admin><Page8 /></Admin>} />
-    <Route path="/dashboard" element={<Admin><Page9 /></Admin>} />
-    <Route path="/dashboard/population-data" element={<Admin><Page10 /></Admin>} />
-    <Route path="/dashboard/posts" element={<Admin><Page11 /></Admin>} />
-    <Route path="/dashboard/village-head-welcome" element={<Admin><Page12 /></Admin>} />
-    <Route path="/dashboard/village-info" element={<Admin><Page13 /></Admin>} />
+    <Route path="/dashboard" element={<Admin><DashboardLayout /></Admin>}>
+      <Route path="apb-desa" element={<Page2 />} />
+      <Route path="employees" element={<Page3 />} />
+      <Route path="gallery" element={<Page4 />} />
+      <Route path="header-settings" element={<Page5 />} />
+      <Route path="helpdesk" element={<Page6 />} />
+      <Route path="hero-slides" element={<Page7 />} />
+      <Route path="info" element={<Page8 />} />
+      <Route index element={<Page9 />} />
+      <Route path="population-data" element={<Page10 />} />
+      <Route path="posts" element={<Page11 />} />
+      <Route path="village-head-welcome" element={<Page12 />} />
+      <Route path="village-info" element={<Page13 />} />
+    </Route>
     <Route path="/galeri" element={<Page14 />} />
     <Route path="/info/:slug" element={<Page15 />} />
     <Route path="/login" element={<Page16 />} />

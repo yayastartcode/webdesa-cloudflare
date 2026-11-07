@@ -200,12 +200,7 @@ export default function HeroSlidesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <Button 
-                variant="outline" 
-                onClick={() => window.location.href = '/dashboard'}
-              >
-                ← Back to Dashboard
-              </Button>
+
               <h1 className="text-2xl font-bold text-orange-600">Hero Slides Management</h1>
             </div>
           </div>
@@ -213,7 +208,7 @@ export default function HeroSlidesPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <section className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
           {message && (
             <Alert className="mb-6">
@@ -412,7 +407,7 @@ export default function HeroSlidesPage() {
             )}
           </div>
         </div>
-      </main>
+      </section>
     </div>
   );
 }

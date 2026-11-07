@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "@/lib/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Edit, Trash2, Save, X, Upload } from "lucide-react";
+import { Plus, Edit, Trash2, Save, X, Upload } from "lucide-react";
 
 interface Employee {
   id: string;
@@ -21,7 +20,6 @@ interface Employee {
 }
 
 export default function EmployeesPage() {
-  const router = useRouter();
   const { toast } = useToast();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -187,15 +185,7 @@ export default function EmployeesPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/dashboard")}
-              className="flex items-center space-x-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span>Kembali ke Dashboard</span>
-            </Button>
+
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Kelola Pegawai Desa

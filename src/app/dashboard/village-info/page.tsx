@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "@/lib/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Save, Eye } from "lucide-react";
+import { Save, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface VillageInfo {
@@ -27,7 +26,6 @@ export default function VillageInfoPage() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -128,15 +126,7 @@ export default function VillageInfoPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push('/dashboard')}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Kembali ke Dashboard
-          </Button>
+
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               Kelola Visi, Misi & Tujuan Desa

@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession, signOut } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth-client";
 import { useRouter } from "@/lib/navigation";
 import type { Session } from "@/lib/auth-client";
 import { useEffect, useState } from "react";
@@ -29,9 +29,6 @@ export default function DashboardPage() {
     setIsLoading(false);
   }, [session, status, router]);
 
-  const handleSignOut = async () => {
-    await signOut({ callbackUrl: "/" });
-  };
 
   if (isLoading || status === "loading") {
     return (
@@ -50,32 +47,10 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-orange-600 dark:text-orange-400">Desasa Admin</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600 dark:text-gray-300">
-                Selamat datang, {session.user?.name || session.user?.email}
-              </span>
-              <Button 
-                onClick={handleSignOut}
-                variant="outline"
-                size="sm"
-              >
-                Keluar
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      <section className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
+          <h1 className="mb-6 text-2xl font-bold">Dashboard</h1>
           <Alert className="mb-6">
             <AlertDescription>
               Selamat datang di dashboard admin Desasa! Anda berhasil masuk sebagai administrator.
@@ -308,7 +283,7 @@ export default function DashboardPage() {
             </Card>
           </div>
         </div>
-      </main>
+      </section>
     </div>
   );
 }
