@@ -45,10 +45,10 @@ test.describe.serial('Cloudflare migration', () => {
   test.afterAll(async () => { await api.dispose(); });
 
   test('anonymous permissions, setup and Better Auth sessions', async () => {
-    for (const path of ['/api/posts?admin=true', '/api/helpdesk', '/api/helpdesk/123', '/api/info/manage/123', '/api/apb-desa?admin=true']) expect((await api.get(path)).status(), path).toBe(403);
+    for (const path of ['/api/posts?admin=true', '/api/helpdesk', '/api/helpdesk/123', '/api/info/manage/123', '/api/apb-desa?admin=true', '/api/admin-users', '/api/admin-users/123', '/api/reports']) expect((await api.get(path)).status(), path).toBe(403);
     expect((await api.put('/api/homepage-settings', { data: { sections: defaultHomeSections } })).status()).toBe(403);
     expect((await api.get('/api/homepage-settings')).ok()).toBe(true);
-    for (const path of ['/api/posts', '/api/gallery', '/api/info', '/api/employees', '/api/hero-slides', '/api/header-settings', '/api/population-data', '/api/village-info', '/api/village-head-welcome', '/api/apb-desa', '/api/homepage-settings', '/api/uploads']) expect((await api.post(path, { data: {} })).status(), path).toBe(403);
+    for (const path of ['/api/posts', '/api/gallery', '/api/info', '/api/employees', '/api/hero-slides', '/api/header-settings', '/api/population-data', '/api/village-info', '/api/village-head-welcome', '/api/apb-desa', '/api/homepage-settings', '/api/admin-users', '/api/uploads']) expect((await api.post(path, { data: {} })).status(), path).toBe(403);
     expect((await api.post('/api/admin/create', { data: { ...credentials, name: 'Administrator' } })).status()).toBe(403);
     const setup = await api.post('/api/admin/create', { headers: { 'X-Setup-Token': 'local-test-setup-token-only' }, data: { ...credentials, name: 'Administrator' } });
     expect(await setup.text()).toContain('Admin berhasil dibuat');
@@ -57,6 +57,10 @@ test.describe.serial('Cloudflare migration', () => {
     expect((await api.post('/api/auth/sign-up/email', { data: { ...credentials, name: 'Attacker', role: 'ADMIN' } })).ok()).toBe(false);
     const login = await api.post('/api/auth/sign-in/email', { data: credentials });
     expect(await login.text()).toContain('ADMIN'); expect(login.status()).toBe(200);
+    const initialReport = (await (await api.get('/api/reports')).json()).data;
+    expect(initialReport.users).toEqual({ total: 1, active: 1 });
+    expect(initialReport.posts).toEqual({ total: 0, published: 0, drafts: 0 });
+    expect(initialReport.population).toBeNull(); expect(initialReport.budget).toBeNull(); expect(initialReport.recent).toEqual([]);
     const session = await api.get('/api/auth/get-session');
     expect((await session.json()).user.role).toBe('ADMIN');
   });
@@ -167,7 +171,7 @@ test.describe.serial('Cloudflare migration', () => {
     const login = await signedIn;
     expect(login.status(), await login.text()).toBe(200);
     await expect(page).toHaveURL(/\/dashboard$/);
-    for (const route of ['posts','header-settings','hero-slides','village-info','village-head-welcome','employees','population-data','gallery','helpdesk','info','apb-desa','village-contact','homepage-settings']) {
+    for (const route of ['posts','header-settings','hero-slides','village-info','village-head-welcome','employees','population-data','gallery','helpdesk','info','apb-desa','village-contact','homepage-settings','users','reports']) {
       await page.goto(`/dashboard/${route}`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('h1').first(), route).toBeVisible();
       await expect(page).toHaveURL(new RegExp(`/dashboard/${route}$`));
@@ -510,6 +514,102 @@ test.describe.serial('Cloudflare migration', () => {
     await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
     await expect(page.locator('section')).toHaveCount(0);
     await page.unroute('**/api/homepage-settings');
+  });
+
+  test('admin accounts create, rename, reset, revoke sessions and retain authored content', async () => {
+    const body = { name: 'Admin Akun', email: 'accounts@example.test', password: 'new-admin-password-2026' };
+    for (const data of [{ ...body, password: 'short' }, { ...body, email: 'invalid' }, { ...body, role: 'ADMIN' }]) expect((await api.post('/api/admin-users', { data })).status()).toBe(400);
+    const created = await api.post('/api/admin-users', { data: body }); expect(created.status()).toBe(201);
+    const target = (await created.json()).data;
+    expect(JSON.stringify(target)).not.toContain('password');
+    expect((await api.post('/api/admin-users', { data: { ...body, email: 'ACCOUNTS@EXAMPLE.TEST' } })).status()).toBe(409);
+    const secondary = await request.newContext({ baseURL: origin, extraHTTPHeaders: { Origin: origin } });
+    let attempt = 0;
+    const signIn = (data: { email: string; password: string }) => secondary.post('/api/auth/sign-in/email', { headers: { 'CF-Connecting-IP': `198.51.100.${++attempt}` }, data });
+    try {
+      expect((await signIn(body)).ok()).toBe(true);
+      expect((await secondary.get('/api/reports')).ok()).toBe(true);
+      const mine = (await (await api.get('/api/auth/get-session')).json()).user;
+      expect((await api.patch(`/api/admin-users/${mine.id}`, { data: { action: 'set-access', enabled: false } })).status()).toBe(409);
+      expect((await api.patch(`/api/admin-users/${target.id}`, { data: { action: 'rename', name: 'Admin Akun Diperbarui' } })).ok()).toBe(true);
+      const article = await secondary.post('/api/posts', { data: { title: 'Konten milik admin kedua', content: '<p>Tetap tersimpan</p>', published: false } });
+      expect(article.ok()).toBe(true); const post = (await article.json()).data;
+      const resetPassword = 'reset-admin-password-2026';
+      const reset = await api.patch(`/api/admin-users/${target.id}`, { data: { action: 'reset-password', password: resetPassword } });
+      expect(reset.ok()).toBe(true);
+      expect((await secondary.get('/api/reports')).status()).toBe(403);
+      expect((await signIn(body)).ok()).toBe(false);
+      expect((await signIn({ email: body.email, password: resetPassword })).ok()).toBe(true);
+      expect((await api.patch(`/api/admin-users/${target.id}`, { data: { action: 'set-access', enabled: false } })).ok()).toBe(true);
+      expect((await secondary.get('/api/admin-users')).status()).toBe(403);
+      expect((await signIn({ email: body.email, password: resetPassword })).ok()).toBe(true);
+      expect((await secondary.get('/api/reports')).status()).toBe(403);
+      expect((await secondary.post('/api/admin-users', { data: { ...body, email: 'forbidden@example.test' } })).status()).toBe(403);
+      expect((await (await api.get(`/api/posts/${post.id}`)).json()).data.title).toBe('Konten milik admin kedua');
+      expect((await api.patch(`/api/admin-users/${target.id}`, { data: { action: 'set-access', enabled: true } })).ok()).toBe(true);
+      expect((await secondary.get('/api/reports')).status()).toBe(403);
+      expect((await signIn({ email: body.email, password: resetPassword })).ok()).toBe(true);
+      expect((await secondary.get('/api/reports')).ok()).toBe(true);
+      expect((await api.delete(`/api/admin-users/${target.id}`)).status()).toBe(405);
+      const listed = await (await api.get('/api/admin-users?limit=100')).json();
+      expect(listed.data.find((row: { id: string }) => row.id === target.id).name).toBe('Admin Akun Diperbarui');
+      expect(JSON.stringify(listed)).not.toMatch(/password|token|ipAddress/);
+      expect((await api.get('/api/admin-users?page=0')).status()).toBe(400);
+    } finally { await secondary.dispose(); }
+  });
+
+  test('dashboard actions open user management and reports with real totals', async ({ page }) => {
+    await page.context().addCookies((await api.storageState()).cookies);
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+    await page.locator('main').getByRole('link', { name: 'Kelola Pengguna', exact: true }).click();
+    await expect(page).toHaveURL(/dashboard\/users$/);
+    await page.getByRole('button', { name: 'Tambah Admin', exact: true }).click();
+    await page.getByLabel('Nama', { exact: true }).fill('Admin Browser');
+    await page.getByLabel('Email', { exact: true }).fill('browser-admin@example.test');
+    await page.getByLabel('Password baru', { exact: true }).fill('browser-password-2026');
+    await page.getByLabel('Konfirmasi password', { exact: true }).fill('different-password-2026');
+    await page.getByRole('button', { name: 'Simpan Admin', exact: true }).click();
+    await expect(page.getByRole('alert')).toContainText('Konfirmasi password tidak sesuai');
+    await page.getByLabel('Konfirmasi password', { exact: true }).fill('browser-password-2026');
+    const created = page.waitForResponse(r => r.url().endsWith('/api/admin-users') && r.request().method() === 'POST');
+    await page.getByRole('button', { name: 'Simpan Admin', exact: true }).click(); expect((await created).status()).toBe(201);
+    await expect(page.getByText('browser-admin@example.test', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Ubah nama browser-admin@example.test', exact: true }).click();
+    await page.getByLabel('Nama', { exact: true }).fill('Admin Browser Diperbarui');
+    await page.getByRole('button', { name: 'Simpan Admin', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Admin Browser Diperbarui', exact: true })).toBeVisible();
+    page.on('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: 'Nonaktifkan akses browser-admin@example.test', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Aktifkan akses browser-admin@example.test', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Aktifkan akses browser-admin@example.test', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Nonaktifkan akses browser-admin@example.test', exact: true })).toBeVisible();
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: 'Admin Browser Diperbarui', exact: true })).toBeVisible();
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+    await page.locator('main').getByRole('link', { name: 'Lihat Laporan', exact: true }).click();
+    await expect(page).toHaveURL(/dashboard\/reports$/);
+    await expect(page.getByRole('heading', { name: 'Laporan Ringkas', exact: true })).toBeVisible();
+    const report = (await (await api.get('/api/reports')).json()).data;
+    const users = (await (await api.get('/api/admin-users?limit=100')).json()).data;
+    const posts = (await (await api.get('/api/posts?admin=true&limit=100')).json()).data;
+    const complaints = (await (await api.get('/api/helpdesk?limit=100')).json()).helpdesks;
+    expect(report.users.total).toBe(users.length); expect(report.users.active).toBe(users.filter((row: { role: string }) => row.role === 'ADMIN').length);
+    expect(report.posts.total).toBe(posts.length); expect(report.posts.published).toBe(posts.filter((row: { published: boolean }) => row.published).length);
+    expect(report.posts.drafts).toBe(posts.filter((row: { published: boolean }) => !row.published).length);
+    expect(report.complaints.total).toBe(complaints.length);
+    for (const status of ['pending', 'in_progress', 'resolved', 'closed']) expect(report.complaints[status]).toBe(complaints.filter((row: { status: string }) => row.status === status).length);
+    const budget = (await (await api.get('/api/apb-desa')).json()).data;
+    expect(report.budget.year).toBe(budget.year); expect(report.budget.pendapatanDesa).toBe(budget.pendapatanDesa);
+    await expect(page.getByRole('link', { name: new RegExp(`Total Berita ${report.posts.total}`) })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Cetak Laporan', exact: true })).toBeEnabled();
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await page.getByRole('button', { name: 'Perbarui', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Perbarui', exact: true })).toBeEnabled();
+    await page.route('**/api/reports', route => route.fulfill({ status: 500, json: { error: 'Laporan gagal dimuat.' } }));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('alert')).toContainText('Laporan gagal dimuat');
+    await expect(page.getByRole('button', { name: 'Cetak Laporan', exact: true })).toBeDisabled();
   });
 
 });

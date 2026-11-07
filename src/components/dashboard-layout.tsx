@@ -1,13 +1,15 @@
 import { useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-  ArrowLeft, ChevronRight, ExternalLink, FileText, Image, Images, LayoutDashboard,
+  ArrowLeft, BarChart3, ChevronRight, ExternalLink, FileText, Image, Images, LayoutDashboard,
   LogOut, LayoutTemplate, MapPin, Megaphone, Menu, MessageSquare, Navigation, Newspaper, Target, Users, Wallet, X,
 } from 'lucide-react';
 import { signOut, useSession } from '@/lib/auth-client';
 
 const sections = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/dashboard/users', label: 'Kelola Pengguna', icon: Users },
+  { path: '/dashboard/reports', label: 'Laporan Ringkas', icon: BarChart3 },
   { path: '/dashboard/homepage-settings', label: 'Tampilan Beranda', icon: LayoutTemplate },
   { path: '/dashboard/posts', label: 'Berita Desa', icon: Newspaper },
   { path: '/dashboard/header-settings', label: 'Header & Navigasi', icon: Navigation },
@@ -42,7 +44,7 @@ export function DashboardLayout() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white">
       <a href="#dashboard-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-2 focus:z-50 focus:rounded focus:bg-white focus:p-3 focus:text-gray-900">Lewati ke konten</a>
-      <header className="sticky top-0 z-40 border-b bg-white dark:bg-gray-900" onKeyDown={event => {
+      <header className="sticky top-0 z-40 border-b bg-white dark:bg-gray-900 print:hidden" onKeyDown={event => {
         if (event.key === 'Escape' && menuOpen) { setMenuOpen(false); menuButton.current?.focus(); }
       }}>
         <div className="flex h-16 items-center justify-between gap-2 px-3 sm:px-6">
@@ -72,14 +74,14 @@ export function DashboardLayout() {
           </nav>
         )}
       </header>
-      <div className="grid lg:grid-cols-[15rem_minmax(0,1fr)]">
-        <aside className="sticky top-16 hidden h-[calc(100dvh-4rem)] overflow-y-auto border-r bg-white p-4 dark:bg-gray-900 lg:block">
+      <div className="grid print:block lg:grid-cols-[15rem_minmax(0,1fr)]">
+        <aside className="sticky top-16 hidden print:hidden h-[calc(100dvh-4rem)] overflow-y-auto border-r bg-white p-4 dark:bg-gray-900 lg:block">
           <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-gray-400">Kelola desa</p>
           <nav aria-label="Navigasi admin" className="space-y-1">{links()}</nav>
         </aside>
         <main id="dashboard-content" tabIndex={-1} className="min-w-0 focus:outline-none">
           {category && (
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b bg-white px-4 py-3 dark:bg-gray-900 sm:px-6">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b print:hidden bg-white px-4 py-3 dark:bg-gray-900 sm:px-6">
               <Link to="/dashboard" className="inline-flex min-h-10 items-center gap-2 text-sm font-medium text-gray-600 hover:text-orange-600 dark:text-gray-300 dark:hover:text-orange-400">
                 <ArrowLeft className="h-4 w-4" aria-hidden="true" />Kembali ke Dashboard
               </Link>

@@ -1,3 +1,6 @@
+import { createHandlers as adminUsersHandlers } from './routes/admin-users/route';
+import { createHandlers as adminUserHandlers } from './routes/admin-users/[id]/route';
+import { createHandlers as reportsHandlers } from './routes/reports/route';
 import { createHandlers as homepageSettingsHandlers } from './routes/homepage-settings/route';
 import { createHandlers as villageContactHandlers } from './routes/village-contact/route';
 import { ZodError } from 'zod';
@@ -30,6 +33,9 @@ import { createHandlers as route20 } from './routes/village-info/route';
 
 type Handler = (request: Request, context: { params: Promise<{ id: string; slug: string }> }) => Promise<Response>;
 const routes = [
+  { path: '/api/admin-users', create: adminUsersHandlers },
+  { path: '/api/admin-users/[id]', create: adminUserHandlers },
+  { path: '/api/reports', create: reportsHandlers },
   { path: '/api/homepage-settings', create: homepageSettingsHandlers },
   { path: '/api/village-contact', create: villageContactHandlers },
   { path: '/api/admin/check', create: route0 },
@@ -81,7 +87,7 @@ export async function handleApi(request: Request, env: AppEnv): Promise<Response
       return await createAdmin(request, db, env);
     }
     // Never expose complaints or administration-only reads to public visitors.
-    const privateRead = path.startsWith('/api/helpdesk') && !(path === '/api/helpdesk' && request.method === 'POST')
+    const privateRead = path === '/api/reports' || path === '/api/admin-users' || path.startsWith('/api/admin-users/') || path.startsWith('/api/helpdesk') && !(path === '/api/helpdesk' && request.method === 'POST')
       || path.startsWith('/api/info/manage/') || url.searchParams.get('admin') === 'true';
     const publicWrite = path === '/api/helpdesk' && request.method === 'POST';
     if ((privateRead || (mutating && !publicWrite)) && !isAdmin) return json('Unauthorized', 403);
@@ -112,7 +118,7 @@ export async function handleApi(request: Request, env: AppEnv): Promise<Response
       }
       if (mutating && request.method !== 'DELETE') {
         let key = route.path.split('/')[2];
-        if (route.path.includes('[id]') && ['info', 'gallery', 'hero-slides', 'helpdesk'].includes(key)) key += '-update';
+        if (route.path.includes('[id]') && ['info', 'gallery', 'hero-slides', 'helpdesk', 'admin-users'].includes(key)) key += '-update';
         if (key in allBodies) await readBody(request.clone(), key as keyof typeof allBodies);
       }
       const parameter = decodeURIComponent(match[1] ?? '');

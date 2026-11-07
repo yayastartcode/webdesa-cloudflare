@@ -54,6 +54,14 @@ Menu **Tampilan Beranda** (`/dashboard/homepage-settings`) menyediakan checklist
 
 Perubahan harus disimpan dengan **Simpan Tampilan**. **Pulihkan bawaan** mencentang semua section, lalu simpan untuk menerapkan. Pengaturan tersimpan di D1 dan berlaku untuk seluruh pengunjung. Jalankan migrasi D1 terbaru sebelum menggunakan fitur ini. Jika pengaturan gagal dimuat, beranda tetap menampilkan bagian utama dan menunggu pengaturan tersedia untuk menampilkan section lainnya.
 
+## Akun admin dan laporan
+
+**Kelola Pengguna** (`/dashboard/users`) menyediakan daftar akun dengan pagination, tambah admin (nama, email, password 12–128 karakter), ubah nama, reset password, serta aktif/nonaktif akses dashboard. Pendaftaran publik tetap dinonaktifkan. Penonaktifan mengubah akses akun menjadi non-admin tanpa menghapus akun atau konten; sesi dicabut saat akses berubah atau password direset. Reset password akun sendiri mengharuskan masuk kembali. Email akun tetap menjadi identitas login saat dibuat.
+
+Akun yang sedang digunakan tidak dapat dinonaktifkan. Pemeriksaan hak admin dilakukan kembali dalam operasi database atomik agar dua admin yang saling menonaktifkan tidak menghilangkan seluruh akses admin. API daftar akun dan laporan hanya dapat dibaca admin; password/hash, token sesi, dan alamat IP tidak dikirim pada daftar akun.
+
+**Laporan Ringkas** (`/dashboard/reports`) menampilkan jumlah akun/admin aktif, berita terbit/draf, pegawai, galeri/info aktif, pengaduan per status, data penduduk, APB aktif, dan pembaruan konten terakhir. Data belum diisi ditandai di halaman admin; angka dashboard dan aktivitas berasal dari data tersimpan. Tersedia perbarui data dan cetak laporan. Jumlah foto pada ringkasan adalah item galeri, bukan seluruh file di bucket R2.
+
 ## Validasi
 
 ```sh
