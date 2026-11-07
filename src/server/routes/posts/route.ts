@@ -3,18 +3,21 @@ import type { RouteContext } from "../../context";
 
 export function createHandlers({ store, session }: RouteContext) {
 
-// GET /api/posts - Get all published posts
+// Public lists show published posts; the authenticated admin list includes drafts.
 async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
+    const admin = searchParams.get('admin') === 'true';
+    if (admin && session?.user.role !== 'ADMIN') {
+      return Response.json({ success: false, error: 'Unauthorized access' }, { status: 403 });
+    }
+    const where = admin ? {} : { published: true };
 
     const posts = await store.post.findMany({
-      where: {
-        published: true
-      },
+      where,
       include: {
         author: {
           select: {
@@ -31,9 +34,7 @@ async function GET(request: Request) {
     });
 
     const totalPosts = await store.post.count({
-      where: {
-        published: true
-      }
+      where
     });
 
     return Response.json({

@@ -22,7 +22,7 @@ async function GET(
       }
     });
 
-    if (!post) {
+    if (!post || (!post.published && session?.user.role !== 'ADMIN')) {
       return Response.json(
         { success: false, error: "Post not found" },
         { status: 404 }

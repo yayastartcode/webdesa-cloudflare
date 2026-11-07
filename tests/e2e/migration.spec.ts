@@ -1,3 +1,4 @@
+import { request as httpRequest } from 'node:http';
 import { test, expect, request, type APIRequestContext } from '@playwright/test';
 
 const origin = 'http://localhost:8788';
@@ -9,7 +10,7 @@ test.describe.serial('Cloudflare migration', () => {
   test.afterAll(async () => { await api.dispose(); });
 
   test('anonymous permissions, setup and Better Auth sessions', async () => {
-    for (const path of ['/api/helpdesk', '/api/helpdesk/123', '/api/info/manage/123', '/api/apb-desa?admin=true']) expect((await api.get(path)).status(), path).toBe(403);
+    for (const path of ['/api/posts?admin=true', '/api/helpdesk', '/api/helpdesk/123', '/api/info/manage/123', '/api/apb-desa?admin=true']) expect((await api.get(path)).status(), path).toBe(403);
     for (const path of ['/api/posts', '/api/gallery', '/api/info', '/api/employees', '/api/hero-slides', '/api/header-settings', '/api/population-data', '/api/village-info', '/api/village-head-welcome', '/api/apb-desa', '/api/uploads']) expect((await api.post(path, { data: {} })).status(), path).toBe(403);
     expect((await api.post('/api/admin/create', { data: { ...credentials, name: 'Administrator' } })).status()).toBe(403);
     const setup = await api.post('/api/admin/create', { headers: { 'X-Setup-Token': 'local-test-setup-token-only' }, data: { ...credentials, name: 'Administrator' } });
@@ -63,6 +64,24 @@ test.describe.serial('Cloudflare migration', () => {
     expect((await api.post('/api/posts', { headers: { Origin: 'https://evil.example' }, data: {} })).status()).toBe(403);
   });
 
+  test('drafts persist in the admin list and stay private until published', async () => {
+    const visitor = await request.newContext({ baseURL: origin });
+    try {
+      const payload = { title: 'Draft API regression', content: '<p>Konten draft</p>', published: false };
+      const created = await api.post('/api/posts', { data: payload });
+      expect(created.ok()).toBe(true);
+      const { data: draft } = await created.json();
+      expect((await (await api.get('/api/posts?admin=true')).json()).data.some((post: { id: string }) => post.id === draft.id)).toBe(true);
+      expect((await (await visitor.get('/api/posts')).json()).data.some((post: { id: string }) => post.id === draft.id)).toBe(false);
+      expect((await visitor.get(`/api/posts/${draft.id}`)).status()).toBe(404);
+      expect((await api.get(`/api/posts/${draft.id}`)).status()).toBe(200);
+      expect((await api.put(`/api/posts/${draft.id}`, { data: { ...payload, published: true } })).ok()).toBe(true);
+      expect((await visitor.get(`/api/posts/${draft.id}`)).status()).toBe(200);
+      expect((await (await visitor.get('/api/posts')).json()).data.some((post: { id: string }) => post.id === draft.id)).toBe(true);
+      expect((await api.delete(`/api/posts/${draft.id}`)).ok()).toBe(true);
+    } finally { await visitor.dispose(); }
+  });
+
   test('helpdesk and R2 image/PDF uploads', async () => {
     const complaint = await api.post('/api/helpdesk', { data: { nama: 'Warga', nomorWhatsapp: '08123456789', kategoriPengaduan: 'umum', pesanPengaduan: 'Mohon bantuan', recaptchaToken: 'development-mode' } });
     expect(complaint.status()).toBe(201);
@@ -79,7 +98,20 @@ test.describe.serial('Cloudflare migration', () => {
     const pdf = await api.post('/api/uploads?type=pdf', { headers: { 'Content-Type': 'application/pdf' }, data: Buffer.from('%PDF-1.7\n%%EOF') }); expect(pdf.status()).toBe(201);
     expect((await api.post('/api/uploads?type=image', { headers: { 'Content-Type': 'image/png' }, data: Buffer.from('invalid') })).status()).toBe(415);
     expect((await api.post('/api/uploads?type=image', { headers: { 'Content-Type': 'image/svg+xml' }, data: '<svg/>' })).status()).toBe(415);
-    expect((await api.post('/api/uploads?type=image', { headers: { 'Content-Type': 'image/png' }, data: Buffer.alloc(4 * 1024 * 1024 + 1) })).status()).toBe(413);
+    // Send only headers so the early 413 cannot race a client writing a large body.
+    const { cookies } = await api.storageState();
+    const oversizedStatus = await new Promise<number>((resolve, reject) => {
+      const upload = httpRequest(new URL('/api/uploads?type=image', origin), {
+        method: 'POST', headers: {
+          'Content-Type': 'image/png', 'Content-Length': 4 * 1024 * 1024 + 1,
+          Origin: origin, Cookie: cookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; '),
+        },
+      }, response => { response.resume(); resolve(response.statusCode ?? 0); response.on('end', () => upload.destroy()); });
+      upload.on('error', reject);
+      upload.setTimeout(5000, () => upload.destroy(new Error('Oversized upload response timed out')));
+      upload.end();
+    });
+    expect(oversizedStatus).toBe(413);
   });
 
   test('public pages and dashboard render with original UI', async ({ page }) => {
@@ -103,6 +135,24 @@ test.describe.serial('Cloudflare migration', () => {
       await expect(page.locator('h1').first(), route).toBeVisible();
       await expect(page).toHaveURL(new RegExp(`/dashboard/${route}$`));
     }
+    await page.goto('/dashboard/posts', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'Tambah Berita', exact: true }).click();
+    await page.getByPlaceholder('Masukkan judul berita').fill('Draft dari editor Tiptap');
+    await page.locator('.tiptap-editor [contenteditable="true"]').fill('Isi berita yang disimpan dari editor.');
+    const saved = page.waitForResponse(response => response.url().endsWith('/api/posts') && response.request().method() === 'POST');
+    await page.getByRole('button', { name: 'Simpan Berita', exact: true }).click();
+    expect((await saved).status()).toBe(200);
+    await expect(page.getByRole('heading', { name: 'Draft dari editor Tiptap', exact: true })).toBeVisible();
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('heading', { name: 'Draft dari editor Tiptap', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Edit Draft dari editor Tiptap', exact: true }).click();
+    await expect(page.locator('.tiptap-editor [contenteditable="true"]')).toContainText('Isi berita yang disimpan dari editor.');
+    await page.getByRole('switch').click();
+    await expect(page.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
+    await page.getByRole('button', { name: 'Simpan Perubahan', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Simpan Perubahan', exact: true })).toHaveCount(0);
+    await page.goto('/berita', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText('Draft dari editor Tiptap').first()).toBeVisible();
     expect(errors).toEqual([]);
   });
 });

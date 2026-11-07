@@ -71,7 +71,7 @@ export default function PostsPage() {
   const fetchPosts = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/posts?limit=100");
+      const response = await fetch("/api/posts?admin=true&limit=100");
       if (response.ok) {
         const data = await response.json();
         setPosts(data.data || []);
@@ -102,7 +102,7 @@ export default function PostsPage() {
       });
 
       if (response.ok) {
-        setMessage("Berita berhasil ditambahkan");
+        setMessage(newForm.published ? "Berita berhasil dipublikasikan" : "Draft berita berhasil disimpan");
         setNewForm({ title: "", content: "", imageUrl: "", published: false });
         setIsAdding(false);
         fetchPosts();
@@ -133,7 +133,7 @@ export default function PostsPage() {
       });
 
       if (response.ok) {
-        setMessage("Berita berhasil diperbarui");
+        setMessage(editForm.published ? "Berita berhasil dipublikasikan" : "Draft berita berhasil disimpan");
         setEditingPost(null);
         setEditForm({ title: "", content: "", imageUrl: "", published: false });
         fetchPosts();
@@ -421,6 +421,7 @@ export default function PostsPage() {
                         <Button
                           variant="outline"
                           size="sm"
+                          aria-label={`Edit ${post.title}`}
                           onClick={() => startEdit(post)}
                         >
                           <Edit className="h-4 w-4" />
@@ -428,6 +429,7 @@ export default function PostsPage() {
                         <Button
                           variant="destructive"
                           size="sm"
+                          aria-label={`Hapus ${post.title}`}
                           onClick={() => handleDeletePost(post.id)}
                         >
                           <Trash2 className="h-4 w-4" />
