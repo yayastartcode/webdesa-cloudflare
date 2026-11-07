@@ -1,6 +1,7 @@
 # Panduan penggunaan website Desa Lomaer
 
-- [Unduh panduan PDF — 35 halaman](Panduan-Penggunaan-Website-Desa-Lomaer.pdf)
+- [Unduh PDF melalui desalomaer.com — 35 halaman](https://desalomaer.com/api/uploads/0c03e3bb-adf6-4ac3-950c-73a3fa72097b.pdf)
+- [Salinan PDF di repository](Panduan-Penggunaan-Website-Desa-Lomaer.pdf)
 - [Sumber teks panduan](panduan-penggunaan.md)
 
 Versi 1.0, 7 November 2026. Alamat yang digunakan dalam panduan adalah **https://desalomaer.com**, dengan login admin **https://desalomaer.com/login**.

@@ -4,7 +4,7 @@ Aplikasi Desa Lomaer menggunakan React + Vite pada Cloudflare Pages, Pages Funct
 
 ## Panduan pengguna
 
-[Unduh panduan PDF untuk admin/operator (35 halaman)](docs/panduan/Panduan-Penggunaan-Website-Desa-Lomaer.pdf). Panduan berbahasa Indonesia memakai alamat `desalomaer.com` dan screenshot dengan data contoh. [Lihat sumber teks dan keterangan versi](docs/panduan/README.md).
+[Unduh panduan PDF untuk admin/operator (35 halaman)](https://desalomaer.com/api/uploads/0c03e3bb-adf6-4ac3-950c-73a3fa72097b.pdf). Panduan berbahasa Indonesia memakai alamat `desalomaer.com` dan screenshot dengan data contoh. [Lihat sumber teks dan keterangan versi](docs/panduan/README.md).
 
 ## Staging
 
