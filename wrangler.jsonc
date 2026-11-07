@@ -44,6 +44,26 @@
           "bucket_name": "webdesa-cloudflare-staging-uploads"
         }
       ]
+    },
+    "production": {
+      "vars": {
+        "APP_ENV": "production",
+        "BETTER_AUTH_URL": "https://desalomaer.com"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "webdesa-cloudflare-production",
+          "database_id": "6664377e-13f3-41d6-9414-881b1f0e04b9",
+          "migrations_dir": "drizzle"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "UPLOADS",
+          "bucket_name": "webdesa-cloudflare-production-uploads"
+        }
+      ]
     }
   }
 }

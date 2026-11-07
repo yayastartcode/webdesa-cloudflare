@@ -10,7 +10,7 @@ Perubahan yang terlihat: setup meminta token dan password minimal 12 karakter, a
 
 ## Menyiapkan Cloudflare Pages
 
-Repository terpisah ini menggunakan Pages project `webdesa-cloudflare-staging`, D1 `webdesa-cloudflare-staging`, dan R2 `webdesa-cloudflare-staging-uploads` yang baru dibuat untuk preview. Tidak ada domain, resource, data, atau file production lama yang dipindahkan. Konfigurasi `env.preview` menunjuk resource staging; konfigurasi top-level tetap berupa placeholder untuk mencegah deploy production yang tidak sengaja.
+Repository terpisah ini menggunakan Pages project `webdesa-cloudflare-staging`, D1 `webdesa-cloudflare-staging`, dan R2 `webdesa-cloudflare-staging-uploads` yang baru dibuat untuk preview. Tidak ada domain, resource, data, atau file production lama yang dipindahkan. Konfigurasi `env.preview` menunjuk resource staging; `env.production` mencatat resource Production untuk `desalomaer.com`. Konfigurasi top-level tetap berupa placeholder untuk mencegah deploy production yang tidak sengaja. Aktivasi Production dicatat di [production.md](production.md).
 
 Sebelum preview remote, buat D1 dan R2 terpisah untuk staging, lalu sesuaikan `database_id`, `database_name`, `bucket_name`, dan `BETTER_AUTH_URL` pada konfigurasi sesuai akun/project yang dipilih. UUID nol dan domain `your-project.pages.dev` adalah placeholder, bukan resource production. Jangan memakai database/bucket production untuk pengujian.
 

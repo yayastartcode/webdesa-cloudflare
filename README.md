@@ -8,9 +8,21 @@ Repository ini berdiri terpisah dari `yayastartcode/webdesa`. Branch aktif adala
 
 Preview: https://migration-cloudflare.webdesa-cloudflare-staging.pages.dev
 
-Project Pages: `webdesa-cloudflare-staging`. Production branch Pages adalah `production` dan tidak dideploy. Preview memakai database `webdesa-cloudflare-staging` dan bucket `webdesa-cloudflare-staging-uploads` yang baru, tanpa data/file production lama. Secret Better Auth disimpan pada konfigurasi preview Cloudflare.
+Project Pages: `webdesa-cloudflare-staging`. Production branch Pages adalah `production`; preview tetap memakai `migration/cloudflare`. Preview memakai database `webdesa-cloudflare-staging` dan bucket `webdesa-cloudflare-staging-uploads` yang baru, tanpa data/file production lama. Secret Better Auth disimpan pada konfigurasi preview Cloudflare.
 
 Untuk mengaktifkan setup admin, tetapkan secret `SETUP_TOKEN` sendiri di **Cloudflare Pages → webdesa-cloudflare-staging → Settings → Variables and Secrets → Preview**, deploy ulang preview, lalu buka `/setup`. Hapus token setelah setup. Tidak ada akun/password demo. CAPTCHA pengaduan tetap fail-closed sampai kunci reCAPTCHA frontend/backend dikonfigurasi.
+
+## Production
+
+Website utama: **https://desalomaer.com**. `www.desalomaer.com` diarahkan permanen ke alamat utama dengan path/query tetap dipertahankan. Project Pages tetap `webdesa-cloudflare-staging`; deployment Production memakai branch metadata `production`, sementara Git tetap dikerjakan di `migration/cloudflare`.
+
+Production memakai D1 `webdesa-cloudflare-production` dan bucket `webdesa-cloudflare-production-uploads`, terpisah dari preview. Data awal disalin dari staging, termasuk akun admin dan hash password; sesi lama, kode verifikasi, dan rate limit tidak disalin. Pengguna masuk kembali dengan akun yang sama. Perubahan data setelah aktivasi tidak tersinkron antara staging dan Production.
+
+Variabel Production: `APP_ENV=production`, `BETTER_AUTH_URL=https://desalomaer.com`, serta secret Better Auth tersendiri yang disimpan di Cloudflare. Setup awal dinonaktifkan karena admin sudah disalin; akun berikutnya ditambahkan dari Kelola Pengguna. Form pengaduan tetap menunggu konfigurasi kunci reCAPTCHA frontend/backend dan domain Google yang sesuai.
+
+Blok `env.production` pada Wrangler mencatat resource dan origin Production. Konfigurasi top-level tetap memakai placeholder agar perintah generik tidak mengarah ke resource remote Production. Deployment berikutnya ke Production memerlukan persetujuan pemilik; workflow GitHub hanya menjalankan pemeriksaan dan tidak melakukan deploy otomatis. Jangan mengubah branch `main` atau repo asal.
+
+Lihat [catatan aktivasi Production](docs/production.md) untuk pemeriksaan dan pemulihan.
 
 ## Pengembangan lokal
 
