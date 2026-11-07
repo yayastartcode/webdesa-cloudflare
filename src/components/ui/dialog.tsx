@@ -16,7 +16,7 @@ interface DialogTriggerProps {
   onClick?: () => void
 }
 
-interface DialogContentProps {
+interface DialogContentProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string
   children: React.ReactNode
 }
@@ -41,20 +41,16 @@ const DialogContext = React.createContext<{
   setOpen: (open: boolean) => void
 }>({ open: false, setOpen: () => {} })
 
-const Dialog: React.FC<DialogProps> = ({ open = false, onOpenChange, children }) => {
-  const [internalOpen, setInternalOpen] = React.useState(open)
+const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
+  const [internalOpen, setInternalOpen] = React.useState(open ?? false)
   
   const setOpen = React.useCallback((newOpen: boolean) => {
-    setInternalOpen(newOpen)
+    if (open === undefined) setInternalOpen(newOpen)
     onOpenChange?.(newOpen)
-  }, [onOpenChange])
-  
-  React.useEffect(() => {
-    setInternalOpen(open)
-  }, [open])
+  }, [open, onOpenChange])
   
   return (
-    <DialogContext.Provider value={{ open: internalOpen, setOpen }}>
+    <DialogContext.Provider value={{ open: open ?? internalOpen, setOpen }}>
       {children}
     </DialogContext.Provider>
   )
@@ -75,7 +71,7 @@ const DialogTrigger: React.FC<DialogTriggerProps> = ({ children, onClick }) => {
   )
 }
 
-const DialogContent: React.FC<DialogContentProps> = ({ className, children }) => {
+const DialogContent: React.FC<DialogContentProps> = ({ className, children, ...props }) => {
   const { open, setOpen } = React.useContext(DialogContext)
   const contentRef = React.useRef<HTMLDivElement>(null)
   
@@ -123,6 +119,9 @@ const DialogContent: React.FC<DialogContentProps> = ({ className, children }) =>
       {/* Content */}
       <div
         ref={contentRef}
+        role="dialog"
+        aria-modal="true"
+        {...props}
         className={cn(
           "relative z-50 w-full max-w-lg mx-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg",
           className
@@ -130,6 +129,7 @@ const DialogContent: React.FC<DialogContentProps> = ({ className, children }) =>
       >
         {/* Close button */}
         <button
+          type="button"
           onClick={() => setOpen(false)}
           className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-gray-100 dark:ring-offset-gray-800 dark:focus:ring-gray-300 dark:data-[state=open]:bg-gray-800"
         >

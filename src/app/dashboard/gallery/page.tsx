@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trash2, Edit, Eye, Plus } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Trash2, Edit, Eye, Plus, ImagePlus, Images, CheckCircle2 } from "lucide-react";
 import Image from "@/components/image";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface GalleryItem {
   id: string;
@@ -38,6 +39,8 @@ export default function GalleryManagement() {
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
   const [editingItem, setEditingItem] = useState<GalleryItem | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -55,9 +58,11 @@ export default function GalleryManagement() {
       if (response.ok) {
         setGalleries(data.galleries);
         setCategories(data.categories);
+      } else {
+        throw new Error(data.error || "Gagal memuat galeri.");
       }
     } catch (error) {
-      console.error("Error fetching galleries:", error);
+      setError(error instanceof Error ? error.message : "Gagal memuat galeri.");
     } finally {
       setLoading(false);
     }
@@ -69,13 +74,15 @@ export default function GalleryManagement() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isUploading) return;
-    if (!formData.title || !formData.imageUrl) {
-      alert("Title dan gambar wajib diisi!");
+    if (isUploading || submitting) return;
+    if (!formData.title.trim() || !formData.imageUrl) {
+      setError("Isi judul kegiatan dan unggah foto terlebih dahulu.");
       return;
     }
 
     setSubmitting(true);
+    setError("");
+    setNotice("");
     try {
       const url = editingItem ? `/api/gallery/${editingItem.id}` : "/api/gallery";
       const method = editingItem ? "PATCH" : "POST";
@@ -83,27 +90,28 @@ export default function GalleryManagement() {
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, title: formData.title.trim(), category: formData.category.trim() }),
       });
 
       if (response.ok) {
         await fetchGalleries();
         resetForm();
         setIsDialogOpen(false);
-        alert(editingItem ? "Item galeri berhasil diperbarui!" : "Item galeri berhasil ditambahkan!");
+        setNotice(editingItem ? "Galeri berhasil diperbarui." : "Galeri berhasil ditambahkan dan ditampilkan di website.");
       } else {
-        const error = await response.json();
-        alert(error.error || "Terjadi kesalahan");
+        const result = await response.json();
+        setError(result.error || "Terjadi kesalahan. Silakan coba lagi.");
       }
     } catch (error) {
-      console.error("Error submitting gallery:", error);
-      alert("Terjadi kesalahan saat menyimpan");
+      setError(error instanceof Error ? error.message : "Terjadi kesalahan saat menyimpan.");
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleEdit = (item: GalleryItem) => {
+    setError("");
+    setNotice("");
     setEditingItem(item);
     setFormData({
       title: item.title,
@@ -118,6 +126,7 @@ export default function GalleryManagement() {
   const handleDelete = async (id: string) => {
     if (!confirm("Apakah Anda yakin ingin menghapus item ini?")) return;
 
+    setError(""); setNotice("");
     try {
       const response = await fetch(`/api/gallery/${id}`, {
         method: "DELETE",
@@ -125,18 +134,18 @@ export default function GalleryManagement() {
 
       if (response.ok) {
         await fetchGalleries();
-        alert("Item galeri berhasil dihapus!");
+        setNotice("Item galeri berhasil dihapus.");
       } else {
-        const error = await response.json();
-        alert(error.error || "Terjadi kesalahan");
+        const result = await response.json();
+        setError(result.error || "Terjadi kesalahan. Silakan coba lagi.");
       }
     } catch (error) {
-      console.error("Error deleting gallery:", error);
-      alert("Terjadi kesalahan saat menghapus");
+      setError(error instanceof Error ? error.message : "Terjadi kesalahan saat menghapus.");
     }
   };
 
   const toggleStatus = async (id: string, currentStatus: boolean) => {
+    setError(""); setNotice("");
     try {
       const response = await fetch(`/api/gallery/${id}`, {
         method: "PATCH",
@@ -146,9 +155,13 @@ export default function GalleryManagement() {
 
       if (response.ok) {
         await fetchGalleries();
+        setNotice("Status galeri diperbarui.");
+      } else {
+        const result = await response.json();
+        setError(result.error || "Gagal memperbarui status.");
       }
     } catch (error) {
-      console.error("Error toggling status:", error);
+      setError(error instanceof Error ? error.message : "Gagal memperbarui status.");
     }
   };
 
@@ -172,88 +185,71 @@ export default function GalleryManagement() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Kelola Galeri Kegiatan</h1>
-          <p className="text-gray-600 mt-2">Kelola foto-foto kegiatan desa</p>
+          <h1 className="text-2xl font-bold">Kelola Galeri Kegiatan</h1>
+          <p className="mt-1 text-sm text-gray-500">Bagikan foto dan cerita kegiatan desa kepada warga.</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
-              <Plus className="w-4 h-4 mr-2" />
-              Tambah Item
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingItem ? "Edit Item Galeri" : "Tambah Item Galeri"}
-              </DialogTitle>
-              <DialogDescription>
-                {editingItem ? "Perbarui informasi item galeri" : "Tambahkan item baru ke galeri kegiatan"}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Judul *</label>
-                <Input
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Masukkan judul kegiatan"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Deskripsi</label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Masukkan deskripsi kegiatan (opsional)"
-                  rows={3}
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Kategori</label>
-                <Input
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  placeholder="Masukkan kategori (contoh: Sosial, Budaya, Olahraga)"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium mb-2">Urutan</label>
-                <Input
-                  type="number"
-                  value={formData.order}
-                  onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
-                  placeholder="Urutan tampil (0 = paling awal)"
-                />
-              </div>
-              
-              <ImageUploadField label="Gambar galeri" required value={formData.imageUrl}
-                onChange={url => setFormData(current => ({ ...current, imageUrl: url }))}
-                onUploadStateChange={onUploadStateChange} />
-
-              <div className="flex gap-2 pt-4">
-                <Button type="submit" disabled={submitting || isUploading}>
-                  {submitting ? "Menyimpan..." : editingItem ? "Perbarui" : "Simpan"}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Batal
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => { resetForm(); setError(""); setNotice(""); setIsDialogOpen(true); }}>
+          <Plus className="h-4 w-4" />Tambah Galeri
+        </Button>
       </div>
+      {notice && <Alert role="status" className="border-green-200 bg-green-50 text-green-800"><CheckCircle2 className="h-4 w-4" /><AlertDescription>{notice}</AlertDescription></Alert>}
+      {error && !isDialogOpen && <Alert variant="destructive" role="alert"><AlertDescription>{error}</AlertDescription></Alert>}
+      <Dialog open={isDialogOpen} onOpenChange={open => { if (!isUploading && !submitting) setIsDialogOpen(open); }}>
+        <DialogContent aria-labelledby="gallery-dialog-title" aria-describedby="gallery-dialog-description" className="flex max-h-[90dvh] max-w-4xl flex-col overflow-hidden">
+          <DialogHeader className="shrink-0 border-b px-5 py-5 pr-12 text-left sm:px-6">
+            <DialogTitle><span id="gallery-dialog-title">{editingItem ? "Edit Galeri Kegiatan" : "Tambah Galeri Kegiatan"}</span></DialogTitle>
+            <DialogDescription><span id="gallery-dialog-description">Unggah satu foto, lalu lengkapi informasi kegiatannya.</span></DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="flex min-h-0 flex-col">
+            <div className="min-h-0 space-y-5 overflow-y-auto p-5 sm:p-6">
+              <div className="grid items-start gap-6 md:grid-cols-2">
+                <section aria-labelledby="gallery-photo-heading" className="min-w-0 space-y-4 rounded-xl bg-gray-50 p-4 dark:bg-gray-900">
+                  <div className="flex items-start gap-3">
+                    <span className="rounded-lg bg-orange-100 p-2 text-orange-700"><ImagePlus className="h-5 w-5" /></span>
+                    <div><h2 id="gallery-photo-heading" className="font-semibold">Foto kegiatan</h2><p className="mt-1 text-sm text-gray-500">Pilih foto yang jelas dan mewakili kegiatan.</p></div>
+                  </div>
+                  <ImageUploadField label="Gambar galeri" required value={formData.imageUrl} disabled={submitting}
+                    previewClassName="aspect-[4/3] max-h-72 w-full rounded-lg border bg-white object-contain dark:bg-gray-800"
+                    onChange={url => setFormData(current => ({ ...current, imageUrl: url }))}
+                    onUploadStateChange={onUploadStateChange} />
+                  {!formData.imageUrl && <div className="flex aspect-[4/3] flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-gray-300 px-4 text-center text-gray-400 dark:border-gray-700"><Images className="h-9 w-9" /><p className="text-sm">Pratinjau foto akan muncul di sini</p></div>}
+                  <p className="text-xs leading-relaxed text-gray-500">Satu foto untuk setiap item galeri. Anda dapat menambah item lain untuk foto kegiatan berikutnya.</p>
+                </section>
+                <fieldset disabled={submitting} className="min-w-0 space-y-5">
+                  <legend className="mb-4 font-semibold">Informasi kegiatan</legend>
+                  <div className="space-y-2"><Label htmlFor="gallery-title">Judul kegiatan <span aria-hidden="true">*</span></Label>
+                    <Input id="gallery-title" value={formData.title} onChange={e => setFormData(current => ({ ...current, title: e.target.value }))} placeholder="Contoh: Kerja bakti membersihkan desa" required maxLength={500} />
+                  </div>
+                  <div className="space-y-2"><Label htmlFor="gallery-description">Deskripsi (opsional)</Label>
+                    <Textarea id="gallery-description" value={formData.description} onChange={e => setFormData(current => ({ ...current, description: e.target.value }))} placeholder="Ceritakan kegiatan, waktu, atau peserta yang terlibat." rows={4} maxLength={4000} />
+                    <p className="text-xs text-gray-500">Keterangan ini akan ditampilkan bersama foto.</p>
+                  </div>
+                  <div className="space-y-2"><Label htmlFor="gallery-category">Kategori (opsional)</Label>
+                    <Input id="gallery-category" list="gallery-categories" value={formData.category} onChange={e => setFormData(current => ({ ...current, category: e.target.value }))} placeholder="Contoh: Sosial, Budaya, Olahraga" maxLength={4000} />
+                    <datalist id="gallery-categories">{categories.map(category => <option key={category} value={category} />)}</datalist>
+                    <p className="text-xs text-gray-500">Pilih kategori yang sudah ada atau ketik kategori baru.</p>
+                  </div>
+                  <div className="space-y-2"><Label htmlFor="gallery-order">Urutan tampil</Label>
+                    <Input id="gallery-order" type="number" min={0} max={10000} step={1} value={formData.order} onChange={e => setFormData(current => ({ ...current, order: Number(e.target.value) }))} className="max-w-32" required aria-describedby="gallery-order-help" />
+                    <p id="gallery-order-help" className="text-xs text-gray-500">Angka lebih kecil tampil lebih awal. Gunakan 0 untuk urutan pertama.</p>
+                  </div>
+                </fieldset>
+              </div>
+              {error && <Alert variant="destructive" role="alert"><AlertDescription>{error}</AlertDescription></Alert>}
+            </div>
+            <div className="flex shrink-0 flex-col gap-3 border-t bg-white p-4 dark:bg-gray-800 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <p role="status" className="text-xs text-gray-500">{isUploading ? "Mengunggah foto, mohon tunggu…" : "* Wajib diisi"}</p>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" disabled={isUploading || submitting} onClick={() => setIsDialogOpen(false)}>Batal</Button>
+                <Button type="submit" disabled={submitting || isUploading}>{isUploading ? "Menunggu upload…" : submitting ? "Menyimpan…" : editingItem ? "Simpan Perubahan" : "Simpan Galeri"}</Button>
+              </div>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>
@@ -294,7 +290,7 @@ export default function GalleryManagement() {
                         {item.category}
                       </span>
                     )}
-                    <div className="flex gap-2 mt-3">
+                    <div className="mt-3 flex flex-wrap gap-2">
                       <Button
                         size="sm"
                         variant="outline"
@@ -305,6 +301,7 @@ export default function GalleryManagement() {
                       </Button>
                       <Button
                         size="sm"
+                        aria-label={`${item.isActive ? "Nonaktifkan" : "Aktifkan"} ${item.title}`}
                         variant={item.isActive ? "secondary" : "default"}
                         onClick={() => toggleStatus(item.id, item.isActive)}
                       >
@@ -313,6 +310,7 @@ export default function GalleryManagement() {
                       <Button
                         size="sm"
                         variant="destructive"
+                        aria-label={`Hapus ${item.title}`}
                         onClick={() => handleDelete(item.id)}
                       >
                         <Trash2 className="w-4 h-4" />

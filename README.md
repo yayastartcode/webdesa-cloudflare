@@ -36,6 +36,8 @@ Untuk HMR, jalankan `npm run preview` pada terminal pertama dan `npm run dev` pa
 
 Form berita, foto pegawai, logo, galeri, hero slide (baru dan lama), serta gambar di dalam editor berita/sambutan menyediakan upload langsung dengan pratinjau. Format JPG, PNG, WebP, dan GIF maksimal 4 MB. File baru disimpan di R2 dan konten memakai URL file, bukan data base64. Form tidak dapat disimpan selama upload berlangsung. URL gambar lama tetap dapat digunakan melalui pilihan “Gunakan URL gambar”.
 
+Form tambah/edit galeri memisahkan foto dan informasi kegiatan, menyediakan pratinjau foto, saran kategori, petunjuk urutan tampil, dan pesan hasil penyimpanan langsung di halaman. Tombol simpan tetap terlihat saat isi form digulir di ponsel. Form tidak dapat ditutup selama upload atau penyimpanan berlangsung.
+
 ## Halaman Info dan Peta & Kontak
 
 Menu Halaman Info menyediakan judul, keterangan singkat maksimal 500 karakter, link halaman, status tampil, serta satu lampiran PDF (maksimal 16 MB) atau gambar (maksimal 4 MB). PDF lama tetap dapat dibuka dan diedit.

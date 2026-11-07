@@ -5,6 +5,7 @@ import { Button } from './button';
 
 type Props = {
   label: string;
+  previewClassName?: string;
   value?: string | null;
   onChange: (url: string) => void;
   onUploadStateChange?: (pending: boolean) => void;
@@ -12,7 +13,7 @@ type Props = {
   disabled?: boolean;
 };
 
-export function ImageUploadField({ label, value = '', onChange, onUploadStateChange, required, disabled }: Props) {
+export function ImageUploadField({ label, value = '', onChange, onUploadStateChange, required, disabled, previewClassName }: Props) {
   const id = useId();
   const [uploading, setUploading] = useState(false);
   return <fieldset disabled={disabled} aria-label={label} className="min-w-0 space-y-3 rounded-lg border border-gray-200 p-3 dark:border-gray-700">
@@ -22,7 +23,7 @@ export function ImageUploadField({ label, value = '', onChange, onUploadStateCha
       onUploadStateChange={pending => { setUploading(pending); onUploadStateChange?.(pending); }}
       onClientUploadComplete={files => { if (files[0]) onChange(files[0].url); }} />
     {value && <div className="space-y-2">
-      <img src={value} alt={`Pratinjau ${label.toLowerCase()}`} className="max-h-40 max-w-full rounded-md border bg-gray-50 object-contain dark:bg-gray-800" />
+      <img src={value} alt={`Pratinjau ${label.toLowerCase()}`} className={previewClassName ?? "max-h-40 max-w-full rounded-md border bg-gray-50 object-contain dark:bg-gray-800"} />
       <Button type="button" size="sm" variant="outline" disabled={uploading || disabled} onClick={() => onChange('')}>Hapus gambar</Button>
     </div>}
     <details className="text-sm">
