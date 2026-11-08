@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Trash2, Edit, Plus, Save, X } from "lucide-react";
+import { apiErrorMessage } from "@/lib/api-error";
 import { useToast } from "@/hooks/use-toast";
 
 interface ApbDesaData {
@@ -61,7 +62,7 @@ export default function ApbDesaDashboard() {
       const response = await fetch('/api/apb-desa?admin=true');
       const result = await response.json();
       
-      if (result.success) {
+      if (response.ok && result.success) {
         setApbData(result.data);
       } else {
         toast({
@@ -108,7 +109,7 @@ export default function ApbDesaDashboard() {
       
       const result = await response.json();
       
-      if (result.success) {
+      if (response.ok && result.success) {
         toast({
           title: "Sukses",
           description: editingId ? "Data APB berhasil diperbarui" : "Data APB berhasil ditambahkan"
@@ -119,7 +120,7 @@ export default function ApbDesaDashboard() {
       } else {
         toast({
           title: "Error",
-          description: result.error || "Terjadi kesalahan",
+          description: apiErrorMessage(response, result.error, "Permintaan APB Desa gagal."),
           variant: "destructive"
         });
       }
@@ -156,7 +157,7 @@ export default function ApbDesaDashboard() {
       
       const result = await response.json();
       
-      if (result.success) {
+      if (response.ok && result.success) {
         toast({
           title: "Sukses",
           description: "Data APB berhasil dihapus"
@@ -165,7 +166,7 @@ export default function ApbDesaDashboard() {
       } else {
         toast({
           title: "Error",
-          description: result.error || "Terjadi kesalahan",
+          description: apiErrorMessage(response, result.error, "Permintaan APB Desa gagal."),
           variant: "destructive"
         });
       }

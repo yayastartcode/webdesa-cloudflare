@@ -45,7 +45,7 @@ test.describe.serial('Cloudflare migration', () => {
   test.afterAll(async () => { await api.dispose(); });
 
   test('anonymous permissions, setup and Better Auth sessions', async () => {
-    for (const path of ['/api/posts?admin=true', '/api/helpdesk', '/api/helpdesk/123', '/api/info/manage/123', '/api/apb-desa?admin=true', '/api/admin-users', '/api/admin-users/123', '/api/reports']) expect((await api.get(path)).status(), path).toBe(403);
+    for (const path of ['/api/posts?admin=true', '/api/helpdesk', '/api/helpdesk/123', '/api/info/manage/123', '/api/apb-desa?admin=true', '/api/admin-users', '/api/admin-users/123', '/api/reports', '/api/site-context']) expect((await api.get(path)).status(), path).toBe(403);
     expect((await api.put('/api/homepage-settings', { data: { sections: defaultHomeSections } })).status()).toBe(403);
     expect((await api.get('/api/homepage-settings')).ok()).toBe(true);
     for (const path of ['/api/posts', '/api/gallery', '/api/info', '/api/employees', '/api/hero-slides', '/api/header-settings', '/api/population-data', '/api/village-info', '/api/village-head-welcome', '/api/apb-desa', '/api/homepage-settings', '/api/admin-users', '/api/uploads']) expect((await api.post(path, { data: {} })).status(), path).toBe(403);
@@ -610,6 +610,84 @@ test.describe.serial('Cloudflare migration', () => {
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('alert')).toContainText('Laporan gagal dimuat');
     await expect(page.getByRole('button', { name: 'Cetak Laporan', exact: true })).toBeDisabled();
+  });
+
+  test('village info reports failures, restores unsaved text and reaches anonymous homepage after verified save', async ({ page, browser }) => {
+    await page.context().addCookies((await api.storageState()).cookies);
+    await page.goto('/dashboard/village-info', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByLabel('Visi Desa (wajib)', { exact: true })).toBeEnabled();
+    await page.getByLabel('Visi Desa (wajib)', { exact: true }).fill('Visi hasil audit penyimpanan');
+    await page.getByLabel('Misi Desa (wajib)', { exact: true }).fill('Misi hasil audit penyimpanan');
+    await page.getByLabel('Tujuan Desa (wajib)', { exact: true }).fill('');
+    await page.getByRole('button', { name: 'Simpan', exact: true }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Isi kolom: Tujuan Desa' })).toBeVisible();
+    await page.getByLabel('Tujuan Desa (wajib)', { exact: true }).fill('Tujuan hasil audit penyimpanan');
+    await page.route('**/api/village-info', route => route.request().method() === 'POST' ? route.fulfill({ status: 503, headers: { 'X-Request-ID': 'audit-test-reference' }, json: { error: 'Penyimpanan sedang sibuk.' } }) : route.continue());
+    await page.getByRole('button', { name: 'Simpan', exact: true }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'audit-test-reference' })).toBeVisible();
+    await expect(page.getByLabel('Visi Desa (wajib)', { exact: true })).toHaveValue('Visi hasil audit penyimpanan');
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByLabel('Visi Desa (wajib)', { exact: true })).toHaveValue('Visi hasil audit penyimpanan');
+    await expect(page.getByText(/Isian belum tersimpan/)).toBeVisible();
+    await page.unroute('**/api/village-info');
+    await saveImageForm(page, '/api/village-info', 'POST', page.getByRole('button', { name: 'Simpan', exact: true }));
+    await expect(page.getByRole('status').filter({ hasText: 'sudah tersimpan dan diverifikasi' })).toBeVisible();
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByLabel('Tujuan Desa (wajib)', { exact: true })).toHaveValue('Tujuan hasil audit penyimpanan');
+    const anonymous = await browser.newContext();
+    try {
+      const publicPage = await anonymous.newPage();
+      await publicPage.route('**/api/hero-slides', route => route.fulfill({ status: 200, contentType: 'text/html', body: 'unavailable' }));
+      await publicPage.goto(origin+'/', { waitUntil: 'domcontentloaded' });
+      for (const text of ['Visi hasil audit penyimpanan', 'Misi hasil audit penyimpanan', 'Tujuan hasil audit penyimpanan']) await expect(publicPage.getByText(text, { exact: true })).toBeVisible();
+    } finally { await anonymous.close(); }
+    await page.getByLabel('Visi Desa (wajib)', { exact: true }).fill('Visi hasil audit setelah koneksi pulih');
+    await page.route('**/api/village-info', route => route.request().method() === 'GET' ? route.fulfill({ status: 503, json: { error: 'Readback unavailable' } }) : route.continue());
+    await page.getByRole('button', { name: 'Simpan', exact: true }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Hasil penyimpanan belum dapat dikonfirmasi' })).toBeVisible();
+    await page.unroute('**/api/village-info');
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByLabel('Visi Desa (wajib)', { exact: true })).toHaveValue('Visi hasil audit setelah koneksi pulih');
+    await expect(page.getByText(/Isian belum tersimpan/)).toHaveCount(0);
+    await api.put('/api/homepage-settings', { data: { sections: { ...defaultHomeSections, villageInfo: false } } });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('note').filter({ hasText: 'disembunyikan di beranda' })).toBeVisible();
+    await api.put('/api/homepage-settings', { data: { sections: defaultHomeSections } });
+    await page.route('**/api/village-info', route => route.request().method() === 'POST' ? route.fulfill({ status: 403, json: { error: 'Unauthorized' } }) : route.continue());
+    await page.getByRole('button', { name: 'Simpan', exact: true }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Sesi login telah berakhir' })).toBeVisible();
+    await page.unroute('**/api/village-info');
+    await page.route('**/api/village-info', route => route.fulfill({ status: 503, json: { error: 'Gagal membaca data tersimpan.' } }));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('button', { name: 'Simpan', exact: true })).toBeDisabled();
+    await expect(page.getByRole('alert').filter({ hasText: 'Gagal membaca data tersimpan' })).toBeVisible();
+    await page.unroute('**/api/village-info');
+    await page.getByRole('button', { name: 'Coba lagi', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Simpan', exact: true })).toBeEnabled();
+  });
+
+  test('legacy editors show validation errors and staging identifies its separate data clearly', async ({ page }) => {
+    await page.context().addCookies((await api.storageState()).cookies);
+    await page.route('**/api/site-context', route => route.fulfill({ json: { success: true, data: { environment: 'staging', canonicalOrigin: 'https://migration-cloudflare.webdesa-cloudflare-staging.pages.dev', primaryOrigin: 'https://desalomaer.com' } } }));
+    await page.goto('/dashboard/employees', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('note').filter({ hasText: 'Mode latihan/staging' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Buka dashboard desalomaer.com', exact: true })).toHaveAttribute('href', 'https://desalomaer.com/dashboard');
+    await page.getByRole('button', { name: 'Tambah Pegawai', exact: true }).click();
+    await page.getByRole('button', { name: 'Simpan', exact: true }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Nama dan jabatan harus diisi' })).toBeVisible();
+    await page.goto('/dashboard/village-head-welcome', { waitUntil: 'domcontentloaded' });
+    await page.locator('.w-md-editor textarea').fill('');
+    await page.getByRole('button', { name: 'Simpan', exact: true }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Konten sambutan tidak boleh kosong' })).toBeVisible();
+    await page.goto('/dashboard/apb-desa', { waitUntil: 'domcontentloaded' });
+    await page.getByRole('button', { name: 'Tambah APB', exact: true }).click();
+    await page.getByLabel('Tahun', { exact: true }).fill('2026');
+    await page.getByLabel('Pendapatan Desa', { exact: true }).fill('10');
+    await page.getByLabel('Belanja Desa', { exact: true }).fill('5');
+    await page.getByRole('button', { name: 'Simpan', exact: true }).click();
+    await expect(page.getByRole('alert').filter({ hasText: 'Data APB untuk tahun ini sudah ada' })).toBeVisible();
+    const inactive = await api.post('/api/apb-desa', { data: { year: 2030, pendapatanDesa: '0', belanjaDesa: '0', isActive: false } });
+    expect(inactive.ok()).toBe(true); expect((await inactive.json()).data.isActive).toBe(false);
   });
 
 });

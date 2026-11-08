@@ -7,9 +7,7 @@ export function createHandlers({ store, session }: RouteContext) {
 async function GET() {
   try {
     const villageInfo = await store.villageInfo.findFirst({
-      orderBy: {
-        createdAt: 'desc'
-      }
+      orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }, { id: 'asc' }]
     });
 
     return Response.json(villageInfo);
@@ -44,7 +42,7 @@ async function POST(request: Request) {
     }
 
     // Check if village info already exists
-    const existingInfo = await store.villageInfo.findFirst();
+    const existingInfo = await store.villageInfo.findFirst({ orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }, { id: 'asc' }] });
 
     let villageInfo;
     if (existingInfo) {

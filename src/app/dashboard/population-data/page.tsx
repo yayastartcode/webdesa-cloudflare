@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { apiErrorMessage } from "@/lib/api-error";
 import { Save, Users } from "lucide-react";
 
 interface PopulationData {
@@ -24,6 +25,7 @@ interface PopulationData {
 export default function PopulationDataPage() {
   const { data: session, status } = useSession() as { data: Session | null; status: string; };
   const router = useRouter();
+  const [loadFailed, setLoadFailed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -54,15 +56,19 @@ export default function PopulationDataPage() {
   }, [session, status, router]);
 
   const fetchPopulationData = async () => {
+    setLoadFailed(false);
     try {
       const response = await fetch('/api/population-data');
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(apiErrorMessage(response, result.error, 'Gagal memuat data penduduk'));
       if (response.ok) {
-        const result = await response.json();
         if (result.success && result.data) {
           setFormData(result.data);
         }
       }
     } catch (error) {
+      setLoadFailed(true);
+      setMessage({ type: 'error', text: error instanceof Error ? error.message : 'Gagal memuat data penduduk.' });
       console.error('Error fetching population data:', error);
     } finally {
       setIsLoading(false);
@@ -78,6 +84,7 @@ export default function PopulationDataPage() {
   };
 
   const handleSave = async () => {
+    if (isSaving || loadFailed) return;
     setIsSaving(true);
     setMessage(null);
 
@@ -159,6 +166,7 @@ export default function PopulationDataPage() {
         </div>
       </header>
 
+      {loadFailed && <Button className="m-4" variant="outline" onClick={() => void fetchPopulationData()}>Coba muat data penduduk lagi</Button>}
       {/* Main Content */}
       <section className="max-w-4xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
@@ -276,7 +284,7 @@ export default function PopulationDataPage() {
               <div className="flex justify-end">
                 <Button
                   onClick={handleSave}
-                  disabled={isSaving}
+                  disabled={isSaving || loadFailed}
                   className="flex items-center space-x-2"
                 >
                   <Save className="h-4 w-4" />

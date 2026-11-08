@@ -69,72 +69,30 @@ export default function Home() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch('/api/homepage-settings', { signal: controller.signal }).then(async response => {
+    fetch('/api/homepage-settings', { cache: 'no-store', signal: controller.signal }).then(async response => {
       if (response.ok) { const result = await response.json(); if (result.success) setSections(result.data.sections); }
     }).catch(error => { if (!controller.signal.aborted) console.error('Error fetching homepage settings:', error); });
     return () => controller.abort();
   }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const controller = new AbortController();
+    const load = async <T,>(path: string, apply: (data: T) => void) => {
       try {
-        // Fetch hero slides
-        const heroSlidesResponse = await fetch('/api/hero-slides');
-        if (heroSlidesResponse.ok) {
-          const slides = await heroSlidesResponse.json();
-          setHeroSlides(slides);
-        } else {
-          console.error('Failed to fetch hero slides');
-        }
-
-        // Fetch header settings
-        const headerResponse = await fetch('/api/header-settings');
-        if (headerResponse.ok) {
-          const headerData = await headerResponse.json();
-          setHeaderSettings(headerData);
-        } else {
-          console.error('Failed to fetch header settings');
-        }
-
-        // Fetch village info
-        const villageInfoResponse = await fetch('/api/village-info');
-        if (villageInfoResponse.ok) {
-          const villageData = await villageInfoResponse.json();
-          setVillageInfo(villageData);
-        } else {
-          console.error('Failed to fetch village info');
-        }
-
-        // Fetch village head welcome
-        const villageHeadWelcomeResponse = await fetch('/api/village-head-welcome');
-        if (villageHeadWelcomeResponse.ok) {
-          const welcomeData = await villageHeadWelcomeResponse.json();
-          if (welcomeData.success) {
-            setVillageHeadWelcome(welcomeData.data || undefined);
-          }
-        } else {
-          console.error('Failed to fetch village head welcome');
-        }
-
-        // Fetch employees
-        const employeesResponse = await fetch('/api/employees');
-        if (employeesResponse.ok) {
-          const employeesData = await employeesResponse.json();
-          if (employeesData.success) {
-            setEmployees(employeesData.data || []);
-          }
-        } else {
-          console.error('Failed to fetch employees');
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setLoading(false);
-      }
+        const response = await fetch(path, { cache: 'no-store', signal: controller.signal });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        if (!controller.signal.aborted) apply(data);
+      } catch (error) { if (!controller.signal.aborted) console.error('Error fetching homepage content:', path, error); }
     };
-
-    fetchData();
+    void load<HeroSlide[]>('/api/hero-slides', setHeroSlides).finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    void load<HeaderSettings | null>('/api/header-settings', setHeaderSettings);
+    void load<VillageInfo | null>('/api/village-info', setVillageInfo);
+    void load<{ success: boolean; data?: VillageHeadWelcome }>('/api/village-head-welcome', result => { if (result.success) setVillageHeadWelcome(result.data); });
+    void load<{ success: boolean; data?: Employee[] }>('/api/employees', result => { if (result.success) setEmployees(result.data || []); });
+    return () => controller.abort();
   }, []);
+
   return (
     <div className="min-h-screen">
       {/* Header */}

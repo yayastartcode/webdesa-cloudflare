@@ -1,119 +1,34 @@
-import { readBody } from "../../validation";
-import type { RouteContext } from "../../context";
-
-export function createHandlers({ store, session }: RouteContext) {
-
-// GET /api/header-settings
-async function GET() {
-  try {
-    const headerSettings = await store.headerSettings.findFirst({
-      include: {
-        navigationItems: {
-          where: { isActive: true },
-          orderBy: { order: 'asc' }
-        }
-      }
-    });
-
-    return Response.json(headerSettings);
-  } catch (error) {
-    console.error("Error fetching header settings:", error);
-    return Response.json(
-      { error: "Failed to fetch header settings" },
-      { status: 500 }
-    );
+import { and, asc, desc, eq } from 'drizzle-orm';
+import type { RouteContext } from '../../context';
+import { createDb } from '../../db/store';
+import { headerSettings, navigationItem } from '../../db/schema';
+import { readBody } from '../../validation';
+export function createHandlers({ env, session }: RouteContext) {
+  const db = createDb(env.DB);
+  const latest = () => db.select().from(headerSettings).orderBy(desc(headerSettings.updatedAt), desc(headerSettings.createdAt), asc(headerSettings.id)).limit(1);
+  async function read(id: string, admin: boolean) {
+    const [row] = await db.select().from(headerSettings).where(eq(headerSettings.id, id));
+    const items = await db.select().from(navigationItem).where(admin ? eq(navigationItem.headerSettingsId, id) : and(eq(navigationItem.headerSettingsId, id), eq(navigationItem.isActive, true))).orderBy(asc(navigationItem.order));
+    return { ...row, navigationItems: items };
   }
-}
-
-// POST /api/header-settings
-async function POST(request: Request) {
-  try {
-
-
-    if (!session || !session.user || session.user.role !== "ADMIN") {
-      return Response.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
-    const { logoUrl, navigationItems } = await readBody(request, "header-settings");
-
-    // Check if header settings already exist
-    let headerSettings = await store.headerSettings.findFirst();
-
-    if (headerSettings) {
-      // Update existing settings
-      headerSettings = await store.headerSettings.update({
-        where: { id: headerSettings.id },
-        data: { logoUrl },
-        include: {
-          navigationItems: {
-            orderBy: { order: 'asc' }
-          }
-        }
-      });
-    } else {
-      // Create new settings
-      headerSettings = await store.headerSettings.create({
-        data: { logoUrl },
-        include: {
-          navigationItems: {
-            orderBy: { order: 'asc' }
-          }
-        }
-      });
-    }
-
-    // Update navigation items if provided
-    if (navigationItems && Array.isArray(navigationItems) && headerSettings) {
-      // Delete existing navigation items
-      await store.navigationItem.deleteMany({
-        where: { headerSettingsId: headerSettings.id }
-      });
-
-      // Create new navigation items
-      if (navigationItems.length > 0) {
-        await store.navigationItem.createMany({
-          data: navigationItems.map((item: {
-            label: string;
-            href: string;
-            order?: number;
-            isActive?: boolean;
-          }, index: number) => ({
-            label: item.label,
-            href: item.href,
-            order: item.order || index + 1,
-            isActive: item.isActive !== false,
-            headerSettingsId: headerSettings!.id
-          }))
-        });
-      }
-
-      // Fetch updated settings with navigation items
-      const updatedSettings = await store.headerSettings.findUnique({
-        where: { id: headerSettings.id },
-        include: {
-          navigationItems: {
-            where: { isActive: true },
-            orderBy: { order: 'asc' }
-          }
-        }
-      });
-
-      if (updatedSettings) {
-        headerSettings = updatedSettings;
-      }
-    }
-
-    return Response.json(headerSettings);
-  } catch (error) {
-    console.error("Error updating header settings:", error);
-    return Response.json(
-      { error: "Failed to update header settings" },
-      { status: 500 }
-    );
+  async function GET(request: Request) {
+    const admin = new URL(request.url).searchParams.get('admin') === 'true';
+    if (admin && session?.user.role !== 'ADMIN') return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    const [row] = await latest();
+    return Response.json(row ? await read(row.id, admin) : null);
   }
-}
-return { GET, POST };
+  async function POST(request: Request) {
+    if (session?.user.role !== 'ADMIN') return Response.json({ error: 'Unauthorized' }, { status: 403 });
+    const data = await readBody(request, 'header-settings');
+    const [old] = await latest(); const id = old?.id ?? crypto.randomUUID();
+    const write = db.insert(headerSettings).values({ id, logoUrl: data.logoUrl ?? null }).onConflictDoUpdate({ target: headerSettings.id, set: { logoUrl: data.logoUrl ?? null, updatedAt: new Date() } });
+    if (data.navigationItems) {
+      const clear = db.delete(navigationItem).where(eq(navigationItem.headerSettingsId, id));
+      const items = data.navigationItems.map((item, index) => ({ ...item, id: crypto.randomUUID(), order: item.order ?? index + 1, isActive: item.isActive ?? true, headerSettingsId: id }));
+      if (items.length) await db.batch([write, clear, db.insert(navigationItem).values(items)]);
+      else await db.batch([write, clear]);
+    } else await write;
+    return Response.json(await read(id, true));
+  }
+  return { GET, POST };
 }
