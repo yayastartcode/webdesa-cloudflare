@@ -4,8 +4,10 @@ import { UploadButton, usePendingUploads } from '@/lib/upload';
 import { useState, useEffect } from "react";
 import { lazy } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Save, Eye } from "lucide-react";
+import { apiErrorMessage } from "@/lib/api-error";
 import { useToast } from "@/hooks/use-toast";
 
 // Dynamically import the markdown editor to avoid SSR issues
@@ -28,6 +30,7 @@ export default function VillageHeadWelcomePage() {
   const { toast } = useToast();
   const [welcome, setWelcome] = useState<VillageHeadWelcome>({ content: "" });
   const [content, setContent] = useState("");
+  const [loadFailed, setLoadFailed] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -37,19 +40,22 @@ export default function VillageHeadWelcomePage() {
   }, []);
 
   const fetchWelcome = async () => {
+    setLoadFailed(false);
     try {
       const response = await fetch("/api/village-head-welcome");
       const data = await response.json();
       
-      if (data.success) {
+      if (!response.ok || !data.success) throw new Error(apiErrorMessage(response, data.error, "Gagal memuat sambutan kepala desa"));
+      if (response.ok && data.success) {
         setWelcome(data.data);
         setContent(data.data.content || "");
       }
     } catch (error) {
+      setLoadFailed(true);
       console.error("Error fetching welcome:", error);
       toast({
         title: "Error",
-        description: "Gagal memuat sambutan kepala desa",
+        description: error instanceof Error ? error.message : "Gagal memuat sambutan kepala desa",
         variant: "destructive"
       });
     } finally {
@@ -58,7 +64,7 @@ export default function VillageHeadWelcomePage() {
   };
 
   const handleSave = async () => {
-    if (isUploading) return;
+    if (isUploading || isSaving || loadFailed) return;
     if (!content.trim()) {
       toast({
         title: "Error",
@@ -80,20 +86,20 @@ export default function VillageHeadWelcomePage() {
 
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.success) {
         setWelcome(data.data);
         toast({
           title: "Berhasil",
           description: "Sambutan kepala desa berhasil disimpan"
         });
       } else {
-        throw new Error(data.error || "Failed to save");
+        throw new Error(apiErrorMessage(response, data.error, "Gagal menyimpan sambutan kepala desa"));
       }
     } catch (error) {
       console.error("Error saving welcome:", error);
       toast({
         title: "Error",
-        description: "Gagal menyimpan sambutan kepala desa",
+        description: error instanceof Error ? error.message : "Gagal menyimpan sambutan kepala desa",
         variant: "destructive"
       });
     } finally {
@@ -140,7 +146,7 @@ export default function VillageHeadWelcomePage() {
             </Button>
             <Button
               onClick={handleSave}
-              disabled={isSaving || isUploading}
+              disabled={isSaving || isUploading || loadFailed}
               className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700"
             >
               <Save className="h-4 w-4" />
@@ -149,7 +155,8 @@ export default function VillageHeadWelcomePage() {
           </div>
         </div>
 
-        {/* Editor */}
+        {loadFailed && <Alert variant="destructive"><AlertDescription>Data sambutan belum dapat dimuat. Muat ulang data sebelum menyimpan perubahan.</AlertDescription><Button className="col-start-2 mt-3 justify-self-start" variant="outline" onClick={() => void fetchWelcome()}>Coba lagi</Button></Alert>}
+      {/* Editor */}
         <Card>
           <CardHeader>
             <CardTitle>Sambutan Kepala Desa</CardTitle>

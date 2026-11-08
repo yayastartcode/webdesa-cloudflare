@@ -58,7 +58,7 @@ export default function HeaderSettingsPage() {
 
   const fetchHeaderSettings = async () => {
     try {
-      const response = await fetch("/api/header-settings");
+      const response = await fetch("/api/header-settings?admin=true", { cache: "no-store" });
       if (response.ok) {
         const data = await response.json();
         if (data) {

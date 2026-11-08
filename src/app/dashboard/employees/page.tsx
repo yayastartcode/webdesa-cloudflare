@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { apiErrorMessage } from "@/lib/api-error";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Edit, Trash2, Save, X, Upload } from "lucide-react";
 
@@ -40,14 +41,13 @@ export default function EmployeesPage() {
       const response = await fetch("/api/employees");
       const data = await response.json();
       
-      if (data.success) {
-        setEmployees(data.data);
-      }
+      if (!response.ok || !data.success) throw new Error(apiErrorMessage(response, data.error, "Gagal memuat data pegawai"));
+      setEmployees(data.data);
     } catch (error) {
       console.error("Error fetching employees:", error);
       toast({
         title: "Error",
-        description: "Gagal memuat data pegawai",
+        description: error instanceof Error ? error.message : "Gagal memuat data pegawai",
         variant: "destructive"
       });
     } finally {
@@ -75,7 +75,7 @@ export default function EmployeesPage() {
 
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.success) {
         await fetchEmployees();
         setNewForm({ name: "", position: "", photoUrl: "", order: employees.length + 1 });
         setIsAdding(false);
@@ -84,13 +84,13 @@ export default function EmployeesPage() {
           description: "Pegawai berhasil ditambahkan"
         });
       } else {
-        throw new Error(data.error);
+        throw new Error(apiErrorMessage(response, data.error));
       }
     } catch (error) {
       console.error("Error adding employee:", error);
       toast({
         title: "Error",
-        description: "Gagal menambahkan pegawai",
+        description: error instanceof Error ? error.message : "Gagal menambahkan pegawai",
         variant: "destructive"
       });
     }
@@ -121,7 +121,7 @@ export default function EmployeesPage() {
 
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.success) {
         await fetchEmployees();
         setIsEditing(null);
         setEditForm({});
@@ -130,13 +130,13 @@ export default function EmployeesPage() {
           description: "Data pegawai berhasil diperbarui"
         });
       } else {
-        throw new Error(data.error);
+        throw new Error(apiErrorMessage(response, data.error));
       }
     } catch (error) {
       console.error("Error updating employee:", error);
       toast({
         title: "Error",
-        description: "Gagal memperbarui data pegawai",
+        description: error instanceof Error ? error.message : "Gagal memperbarui data pegawai",
         variant: "destructive"
       });
     }
@@ -154,20 +154,20 @@ export default function EmployeesPage() {
 
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.success) {
         await fetchEmployees();
         toast({
           title: "Berhasil",
           description: "Pegawai berhasil dihapus"
         });
       } else {
-        throw new Error(data.error);
+        throw new Error(apiErrorMessage(response, data.error));
       }
     } catch (error) {
       console.error("Error deleting employee:", error);
       toast({
         title: "Error",
-        description: "Gagal menghapus pegawai",
+        description: error instanceof Error ? error.message : "Gagal menghapus pegawai",
         variant: "destructive"
       });
     }

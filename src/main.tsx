@@ -9,6 +9,7 @@ import './app/globals.css';
 const HomepageSettingsPage = lazy(() => import('./app/dashboard/homepage-settings/page'));
 const UsersPage = lazy(() => import('./app/dashboard/users/page'));
 const ReportsPage = lazy(() => import('./app/dashboard/reports/page'));
+const AboutPage = lazy(() => import('./app/about/page'));
 const ContactPage = lazy(() => import('./app/contact/page'));
 const ContactSettingsPage = lazy(() => import('./app/dashboard/village-contact/page'));
 const Page0 = lazy(() => import('./app/berita/[id]/page'));
@@ -40,6 +41,8 @@ function Admin({ children }: { children: React.ReactNode }) {
 }
 createRoot(document.getElementById('root')!).render(
   <BrowserRouter><Suspense fallback={<p className="p-8">Memuat...</p>}><Routes>
+    <Route path="/about" element={<AboutPage />} />
+    <Route path="/tentang" element={<Navigate to="/about" replace />} />
     <Route path="/contact" element={<ContactPage />} />
     <Route path="/kontak" element={<Navigate to="/contact" replace />} />
     <Route path="/berita/:id" element={<Page0 />} />

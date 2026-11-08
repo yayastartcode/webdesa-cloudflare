@@ -1,3 +1,4 @@
+import { createHandlers as siteContextHandlers } from './routes/site-context/route';
 import { createHandlers as adminUsersHandlers } from './routes/admin-users/route';
 import { createHandlers as adminUserHandlers } from './routes/admin-users/[id]/route';
 import { createHandlers as reportsHandlers } from './routes/reports/route';
@@ -33,6 +34,7 @@ import { createHandlers as route20 } from './routes/village-info/route';
 
 type Handler = (request: Request, context: { params: Promise<{ id: string; slug: string }> }) => Promise<Response>;
 const routes = [
+  { path: '/api/site-context', create: siteContextHandlers },
   { path: '/api/admin-users', create: adminUsersHandlers },
   { path: '/api/admin-users/[id]', create: adminUserHandlers },
   { path: '/api/reports', create: reportsHandlers },
@@ -61,7 +63,7 @@ const routes = [
 
 ];
 const json = (error: string, status: number) => Response.json({ error }, { status });
-export async function handleApi(request: Request, env: AppEnv): Promise<Response> {
+async function dispatchApi(request: Request, env: AppEnv): Promise<Response> {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/$/, '');
   const mutating = !['GET', 'HEAD', 'OPTIONS'].includes(request.method);
@@ -87,7 +89,7 @@ export async function handleApi(request: Request, env: AppEnv): Promise<Response
       return await createAdmin(request, db, env);
     }
     // Never expose complaints or administration-only reads to public visitors.
-    const privateRead = path === '/api/reports' || path === '/api/admin-users' || path.startsWith('/api/admin-users/') || path.startsWith('/api/helpdesk') && !(path === '/api/helpdesk' && request.method === 'POST')
+    const privateRead = path === '/api/site-context' || path === '/api/reports' || path === '/api/admin-users' || path.startsWith('/api/admin-users/') || path.startsWith('/api/helpdesk') && !(path === '/api/helpdesk' && request.method === 'POST')
       || path.startsWith('/api/info/manage/') || url.searchParams.get('admin') === 'true';
     const publicWrite = path === '/api/helpdesk' && request.method === 'POST';
     if ((privateRead || (mutating && !publicWrite)) && !isAdmin) return json('Unauthorized', 403);
@@ -133,4 +135,16 @@ export async function handleApi(request: Request, env: AppEnv): Promise<Response
     console.error(JSON.stringify({ event: 'api_error', path, message: error instanceof Error ? error.message : String(error) }));
     return json('Terjadi kesalahan server', 500);
   }
+}
+
+export async function handleApi(request: Request, env: AppEnv): Promise<Response> {
+  const requestId = crypto.randomUUID();
+  const response = await dispatchApi(request, env);
+  const headers = new Headers(response.headers);
+  headers.set('X-Request-ID', requestId);
+  if (!new URL(request.url).pathname.startsWith('/api/uploads/')) headers.set('Cache-Control', 'no-store');
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method) && response.status >= 400) {
+    console.warn(JSON.stringify({ event: 'write_rejected', requestId, environment: env.APP_ENV, method: request.method, path: new URL(request.url).pathname, status: response.status }));
+  }
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }

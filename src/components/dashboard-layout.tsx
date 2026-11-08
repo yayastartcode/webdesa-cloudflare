@@ -1,3 +1,5 @@
+import { ToastViewport } from './toast-viewport';
+import { DashboardContext } from './dashboard-context';
 import { useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
@@ -91,9 +93,11 @@ export function DashboardLayout() {
               </nav>
             </div>
           )}
+          <DashboardContext />
           <Outlet />
         </main>
       </div>
+      <ToastViewport />
     </div>
   );
 }

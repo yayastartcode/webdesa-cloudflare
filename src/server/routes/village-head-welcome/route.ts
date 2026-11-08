@@ -6,9 +6,7 @@ export function createHandlers({ store, session }: RouteContext) {
 async function GET() {
   try {
     const welcome = await store.villageHeadWelcome.findFirst({
-      orderBy: {
-        updatedAt: 'desc'
-      }
+      orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }, { id: 'asc' }]
     });
 
     return Response.json({
@@ -45,7 +43,7 @@ async function POST(request: Request) {
     }
 
     // Check if welcome message already exists
-    const existingWelcome = await store.villageHeadWelcome.findFirst();
+    const existingWelcome = await store.villageHeadWelcome.findFirst({ orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }, { id: 'asc' }] });
 
     let welcome;
     if (existingWelcome) {

@@ -27,7 +27,7 @@ export const bodies = {
   posts: z.object({ title: short, content, imageUrl, published: z.boolean().optional() }),
   'header-settings': z.object({ logoUrl: imageUrl, navigationItems: z.array(z.object({ label: short, href: z.string().max(2000).refine(v => /^\/(?!\/)|^https:\/\//.test(v)), order: order.optional(), isActive: z.boolean().optional() })).max(100).optional() }),
   'hero-slides': z.object({ title: short, description: content, imageUrl: imageUrl.unwrap().unwrap(), order, isActive: z.boolean().optional() }),
-  'village-info': z.object({ visi: content, misi: content, tujuan: content }),
+  'village-info': z.object({ visi: content.trim().min(1), misi: content.trim().min(1), tujuan: content.trim().min(1) }),
   'village-head-welcome': z.object({ content }),
   'population-data': z.object(Object.fromEntries(['totalPopulation','malePopulation','femalePopulation','households','temporaryResidents','populationMutations'].map(key => [key, z.number().int().min(0).max(1_000_000_000)]))),
   employees: z.object({ name: short, position: short, photoUrl: imageUrl, order }),

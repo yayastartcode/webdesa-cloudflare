@@ -81,7 +81,7 @@ async function POST(request: Request) {
     }
 
     const body = await readBody(request, "apb-desa");
-    const { year, pendapatanDesa, belanjaDesa } = body;
+    const { year, pendapatanDesa, belanjaDesa, isActive } = body;
 
     if (!year || !pendapatanDesa || !belanjaDesa) {
       return Response.json(
@@ -106,7 +106,8 @@ async function POST(request: Request) {
       data: {
         year: parseInt(year),
         pendapatanDesa: parseFloat(pendapatanDesa),
-        belanjaDesa: parseFloat(belanjaDesa)
+        belanjaDesa: parseFloat(belanjaDesa),
+        isActive: isActive ?? true
       }
     });
 
