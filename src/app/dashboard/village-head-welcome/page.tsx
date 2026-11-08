@@ -155,7 +155,7 @@ export default function VillageHeadWelcomePage() {
           </div>
         </div>
 
-        {loadFailed && <Alert variant="destructive"><AlertDescription>Data sambutan belum dapat dimuat. Muat ulang data sebelum menyimpan perubahan.</AlertDescription><Button className="mt-3" variant="outline" onClick={() => void fetchWelcome()}>Coba lagi</Button></Alert>}
+        {loadFailed && <Alert variant="destructive"><AlertDescription>Data sambutan belum dapat dimuat. Muat ulang data sebelum menyimpan perubahan.</AlertDescription><Button className="col-start-2 mt-3 justify-self-start" variant="outline" onClick={() => void fetchWelcome()}>Coba lagi</Button></Alert>}
       {/* Editor */}
         <Card>
           <CardHeader>
